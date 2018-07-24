@@ -1,0 +1,42 @@
+{
+  "name": "mongodb-activity-feed",
+  "version": "1.0.0",
+  "description": "Activity Feeds, Timeline, Notification Feed, News Feed with MongoDB, Mongo",
+  "main": "index.js",
+  "author": "Thierry Schellenbach",
+  "license": "BSD",
+  "private": false,
+  "dependencies": {
+    "bull": "^3.4.2",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "ioredis": "^3.2.2",
+    "mongodb": "^3.1.1",
+    "mongoose": "^5.2.1",
+    "winston": "^3.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-plugin-istanbul": "^4.1.6",
+    "babel-plugin-shebang": "^0.0.0",
+    "babel-plugin-transform-async-generator-functions": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "clarify": "^2.1.0",
+    "codecov": "^3.0.3",
+    "flatted": "^0.2.3",
+    "get-port": "^3.2.0",
+    "mocha": "^5.2.0",
+    "mock-require": "^3.0.2",
+    "nock": "^9.4.1",
+    "prettier": "^1.13.7",
+    "prettierrc": "^0.0.0-5",
+    "sinon": "^6.1.2",
+    "trace": "^3.1.0"
+  }
+}
