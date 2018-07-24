@@ -13,6 +13,8 @@
     "ioredis": "^3.2.2",
     "mongodb": "^3.1.1",
     "mongoose": "^5.2.1",
+    "mongoose-autopopulate": "^0.8.0",
+    "mongoose-timestamp": "^0.6.0",
     "winston": "^3.0.0"
   },
   "devDependencies": {
