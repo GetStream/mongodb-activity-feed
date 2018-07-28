@@ -1,26 +1,27 @@
-## Activity Feed Node & Mongo DB ##
+## Activity Feed Node & Mongo DB
 
-Simple example of how to build a news feed with node and mongodb.
+Simple example of how to build a news feed with Node and MongoDB.
 I created it for this blogpost: "Building Activity Feeds with MongoDB vs the alternatives"
 
-https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/edit#
+https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/edit
 
-## News Feed Mongo ##
+It uses CRDTs https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type to reduce the need for locks.
 
-## Notification Feed Node ##
+## News Feed Mongo
 
+## Notification Feed Node
 
-## Timeline ##
+## Timeline
 
-
-### Init ###
+### Init
 
 ```
+import {FeedManager} from 'mongodb-activity-feed'
 const fm = new FeedManager(mongoConnection, redisConnection)
 fm.feed('user', '123')
 ```
 
-### Adding an activity ###
+### Adding an activity
 
 Add an activity like this.
 
@@ -36,14 +37,14 @@ fm.removeActivity(activityID)
 fm.removeActivityFromFeed(activityID, feed)
 ```
 
-### Follow a feed ###
+### Follow a feed
 
 ```
 fm.follow(a, b)
 fm.unfollow(a, b)
 ```
 
-### Read a feed from MongoDB ###
+### Read a feed from MongoDB
 
 ```
 fm.readFeed('user', '123', options)

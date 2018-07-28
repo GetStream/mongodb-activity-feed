@@ -1,252 +1,144 @@
-import {dropDBs} from '../../test/utils.js'
-import Activity from '../../src/models/activity'
-import FeedGroup from '../../src/models/feed_group'
-import Feed from '../../src/models/feed'
-import ActivityFeed from '../../src/models/activity_feed'
-import Follow from '../../src/models/follow'
-import chunkify from '../../src/utils/chunk'
-import redis from '../../src/utils/redis'
+import { dropDBs } from "../../test/utils.js";
+import Activity from "../../src/models/activity";
+import FeedGroup from "../../src/models/feed_group";
+import Feed from "../../src/models/feed";
+import ActivityFeed from "../../src/models/activity_feed";
+import Follow from "../../src/models/follow";
+import redis from "../../src/utils/redis";
+import db from "../../src/utils/db";
 
-import { expect } from 'chai';
-import Redlock from 'redlock'
+import { expect } from "chai";
 
-
-const ADD_OPERATION = 1
-const REMOVE_OPERATION = 2
-const updateOptions = {upsert: true, new:true}
+import { FeedManager, OPERATIONS } from "../../src/index";
 
 // TODO:
-// - depedency injection for redis and mongo connection, cleanup code
+// - bull
+// - make mongo connection configurable
+// - beatify & docs
+// - package
 // - read ranked feed
 // - read aggregate feed
-// - beatify & docs
-// - bull
-// - package
+// - node docs
 
+describe("Test Feed Operations", () => {
+  let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen;
 
-var redlock = new Redlock(
-	// you should have one client for each independent redis node
-	// or cluster
-	[redis],
-	{
-		// the expected clock drift; for more details
-		// see http://redis.io/topics/distlock
-		driftFactor: 0.01, // time in ms
+  let fm = new FeedManager(db, redis);
 
-		// the max number of times Redlock will attempt
-		// to lock a resource before erroring
-		retryCount:  3,
+  before(async () => {
+    await dropDBs();
+    timelineScott = await fm.getOrCreateFeed("timeline", "scott");
+    timelineTom = await fm.getOrCreateFeed("timeline", "tom");
+    timelineFederico = await fm.getOrCreateFeed("timeline", "federico");
 
-		// the time in ms between attempts
-		retryDelay:  300, // time in ms
+    userJosh = await fm.getOrCreateFeed("user", "josh");
+    userAlex = await fm.getOrCreateFeed("user", "alex");
+    userBen = await fm.getOrCreateFeed("user", "ben");
+  });
 
-		// the max time in ms randomly added to retries
-		// to improve performance under high contention
-		// see https://www.awsarchitectureblog.com/2015/03/backoff.html
-		retryJitter:  200 // time in ms
-	}
-);
+  it("should create a feed", async () => {
+    const timelineThierry = await fm.getOrCreateFeed("timeline", "thierry");
+    expect(timelineThierry).to.not.be.null;
+    const timelineThierry2 = await fm.getOrCreateFeed("timeline", "thierry");
+    expect(timelineThierry2).to.not.be.null;
+    expect(timelineThierry2._id.toString()).to.equal(
+      timelineThierry._id.toString()
+    );
+  });
 
-export async function follow(source, target) {
-	const lock = await redlock.lock(`followLock${source._id}`, 10*1000)
+  it("should add an activity", async () => {
+    const activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      duration: 50,
+      time: "2015-06-15"
+    };
+    const activity = await fm.addActivity(activityData, userJosh);
+    expect(activity).to.not.be.null;
+    const activity2 = await fm.addActivity(activityData, userJosh);
+    expect(activity2).to.not.be.null;
+    expect(activity._id.toString()).to.equal(activity2._id.toString());
+  });
 
-	// create the follow relationship
-	const follow = await Follow.findOneAndUpdate({source, target}, {source, target}, updateOptions)
+  it("should follow a feed", async () => {
+    const relation = await fm.follow(timelineScott, userJosh);
+  });
 
-	// get the activity references
-	const activityReferences = await ActivityFeed.find({feed: target}).limit(300).sort('-time')
+  it("should unfollow a feed", async () => {
+    const relation = await fm.follow(timelineScott, userJosh);
+    const relation2 = await fm.unfollow(timelineScott, userJosh);
+  });
 
-	// write these to the source feed
-	const operations = []
-	for (const reference of activityReferences) {
-		let document = reference.toObject()
-		document._id = null
-		document.feed = source
-		operations.push({ insertOne: { document } })
-	}
-	// call the bulk create
-	if (operations.length >= 1) {
-		await ActivityFeed.bulkWrite(operations, { ordered: false })
-	}
-	await lock.unlock()
-}
+  it("should read an empty feed", async () => {
+    const feed = await fm.getOrCreateFeed("test", "thierry");
+    let activities = await fm.readFeed(feed, 3);
+    expect(activities.length).to.equal(0);
+  });
 
-export async function unfollow(source, target) {
-	const lock = await redlock.lock(`followLock${source._id}`, 10*1000)
+  it("should read a feed with 1 activity", async () => {
+    const feed = await fm.getOrCreateFeed("test", "thierry");
+    const activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      duration: 50,
+      time: "2015-06-15"
+    };
+    let activity = await fm.addActivity(activityData, feed);
+    let activities = await fm.readFeed(feed, 3);
+    expect(activities.length).to.equal(1);
+  });
 
-	// create the follow relationship
-	const follow = await Follow.findOneAndDelete({source, target})
+  it("should remove an activity", async () => {
+    const feed = await fm.getOrCreateFeed("test", "nick");
+    const activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      duration: 50,
+      time: "2015-06-15"
+    };
+    let activity = await fm.addActivity(activityData, feed);
+    let activity2 = await fm.removeActivity(activityData, feed);
+    expect(activity._id.toString()).to.equal(activity2._id.toString());
 
-	// remove the activities with the given origin
-	const activityReferences = await ActivityFeed.remove({feed: source, origin:target})
+    let activities = await fm.readFeed(feed, 3);
+    expect(activities.length).to.equal(0);
+  });
 
-	await lock.unlock()
-}
+  it("should fanout when adding an activity", async () => {
+    const relation = await fm.follow(timelineTom, userAlex);
+    const activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Carrie Underwood",
+      duration: 55
+    };
+    let activity = await fm.addActivity(activityData, userAlex);
+    let userFeedActivities = await fm.readFeed(userAlex, 3);
+    expect(userFeedActivities.length).to.equal(1);
+    let timelineFeedActivities = await fm.readFeed(timelineTom, 3);
+    expect(timelineFeedActivities.length).to.equal(1);
+  });
 
-async function addOrRemoveActivity(activityData, feed, operation) {
-	// create the activity
-	let {actor, verb, object, target, time, ...extra} = activityData
-	if (!time) {
-		time = new Date()
-	}
-	const values = {actor: actor, verb: verb, object: object, target: target, time: time, extra: extra }
-	const activity = await Activity.findOneAndUpdate(values, values, {upsert: true, new: true})
-
-	// create the activity feed for the primary feed
-	const activityFeed = await ActivityFeed.create({feed: feed, activity: activity, operation: operation, time: activity.time, origin:feed})
-
-	// fanout to the followers in batches
-	const followers = await Follow.find({target: feed}).select('source').lean()
-	const groups = chunkify(followers, 500)
-	for (const group of groups) {
-		// TODO: wrap this in a task, use bulk operations
-		let operations = []
-		for (const follow of group) {
-			let document = {feed: follow.source, activity: activity, operation: operation, time: activity.time, origin: feed}
-			operations.push({ insertOne: { document } })
-		}
-		if (operations.length >= 1) {
-			await ActivityFeed.bulkWrite(operations, { ordered: false })
-		}
-	}
-	return activity
-}
-
-export async function readFeed(feed, limit) {
-	// read the feed sorted by the activity time
-	const operations = await ActivityFeed.find({feed}).sort({time: -1, operationTime:-1}).limit(1000)
-	// next order by the operationTime to handle scenarios where people add/remove
-	operations.sort((a,b) => {
-		return b.operationTime - a.operationTime
-	})
-	// TODO: there are edge cases here with add/remove on older activities
-	// For example if you add 1 activity with a recent time 500 times and remove it 500 times.
-	// Next you add an activity with an older time
-	// the feed will show up empty
-	const seen = {}
-	const activities = []
-	for (const activityOperation of operations) {
-		if (activityOperation.activity in seen) {
-			// ignore
-		} else {
-			if (activityOperation.operation == ADD_OPERATION) {
-				activities.push(activityOperation.activity)
-			}
-			seen[activityOperation.activity] = true
-		}
-	}
-	return activities.slice(0, limit)
-}
-
-
-
-
-export async function getOrCreateFeed(name, feedID) {
-	const group = await FeedGroup.findOneAndUpdate({name}, {name}, updateOptions)
-	const feed = await Feed.findOneAndUpdate({group: group, feedID}, {group: group, feedID}, updateOptions)
-	return feed
-}
-
-
-
-export async function addActivity(activityData, feed) {
-	return addOrRemoveActivity(activityData, feed, ADD_OPERATION)
-}
-
-export async function removeActivity(activityData, feed) {
-	return addOrRemoveActivity(activityData, feed, REMOVE_OPERATION)
-}
-
-describe('Test Feed Operations', () => {
-	let timelineScott, timelineTom,timelineFederico, userJosh, userAlex, userBen
-
-	before(async () => {
-		await dropDBs();
-		timelineScott = await getOrCreateFeed('timeline', 'scott')
-		timelineTom = await getOrCreateFeed('timeline', 'tom')
-		timelineFederico = await getOrCreateFeed('timeline', 'federico')
-
-		userJosh = await getOrCreateFeed('user', 'josh')
-		userAlex = await getOrCreateFeed('user', 'alex')
-		userBen = await getOrCreateFeed('user', 'ben')
-
-	});
-
-	it('should create a feed', async() => {
-		const timelineThierry = await getOrCreateFeed('timeline', 'thierry')
-		expect(timelineThierry).to.not.be.null
-		const timelineThierry2 = await getOrCreateFeed('timeline', 'thierry')
-		expect(timelineThierry2).to.not.be.null
-		expect(timelineThierry2._id.toString()).to.equal(timelineThierry._id.toString())
-	});
-
-	it('should add an activity', async() => {
-		const activityData = {actor: 'user:123', verb: 'listen', object: 'Norah Jones', duration: 50, time: '2015-06-15'}
-		const activity = await addActivity(activityData, userJosh)
-		expect(activity).to.not.be.null
-		const activity2 = await addActivity(activityData, userJosh)
-		expect(activity2).to.not.be.null
-		expect(activity._id.toString()).to.equal(activity2._id.toString())
-	});
-
-	it('should follow a feed', async() => {
-		const relation = await follow(timelineScott, userJosh)
-	})
-
-	it('should unfollow a feed', async() => {
-		const relation = await follow(timelineScott, userJosh)
-		const relation2 = await unfollow(timelineScott, userJosh)
-	})
-
-	it('should read an empty feed', async() => {
-		const feed = await getOrCreateFeed('test', 'thierry')
-		let activities = await readFeed(feed, 3)
-		expect(activities.length).to.equal(0)
-	})
-
-	it('should read a feed with 1 activity', async() => {
-		const feed = await getOrCreateFeed('test', 'thierry')
-		const activityData = {actor: 'user:123', verb: 'listen', object: 'Norah Jones', duration: 50, time: '2015-06-15'}
-		let activity = await addActivity(activityData, feed)
-		let activities = await readFeed(feed, 3)
-		expect(activities.length).to.equal(1)
-	})
-
-	it('should remove an activity', async() => {
-		const feed = await getOrCreateFeed('test', 'nick')
-		const activityData = {actor: 'user:123', verb: 'listen', object: 'Norah Jones', duration: 50, time: '2015-06-15'}
-		let activity = await addActivity(activityData, feed)
-		let activity2 = await removeActivity(activityData, feed)
-		expect(activity._id.toString()).to.equal(activity2._id.toString())
-
-		let activities = await readFeed(feed, 3)
-		expect(activities.length).to.equal(0)
-	})
-
-	it('should fanout when adding an activity', async() => {
-		const relation = await follow(timelineTom, userAlex)
-		const activityData = {actor: 'user:123', verb: 'listen', object: 'Carrie Underwood', duration: 55}
-		let activity = await addActivity(activityData, userAlex)
-		let userFeedActivities = await readFeed(userAlex, 3)
-		expect(userFeedActivities.length).to.equal(1)
-		let timelineFeedActivities = await readFeed(timelineTom, 3)
-		expect(timelineFeedActivities.length).to.equal(1)
-	})
-
-	it('should copy on follow', async() => {
-		const activityData = {actor: 'user:ben', verb: 'listen', object: 'Carrie Underwood', duration: 55}
-		let activity = await addActivity(activityData, userBen)
-		// verify there is 1 activity in the user feed
-		let userFeedActivities = await readFeed(userBen, 3)
-		expect(userFeedActivities.length).to.equal(1)
-		// verify the timeline is empty
-		let timelineFeedActivities = await readFeed(timelineFederico, 3)
-		expect(timelineFeedActivities.length).to.equal(0)
-		// follow and see if we got the record
-		const relation = await follow(timelineFederico, userBen)
-		timelineFeedActivities = await readFeed(timelineFederico, 3)
-		expect(timelineFeedActivities.length).to.equal(1)
-	})
-
-
+  it("should copy on follow", async () => {
+    const activityData = {
+      actor: "user:ben",
+      verb: "listen",
+      object: "Carrie Underwood",
+      duration: 55
+    };
+    let activity = await fm.addActivity(activityData, userBen);
+    // verify there is 1 activity in the user feed
+    let userFeedActivities = await fm.readFeed(userBen, 3);
+    expect(userFeedActivities.length).to.equal(1);
+    // verify the timeline is empty
+    let timelineFeedActivities = await fm.readFeed(timelineFederico, 3);
+    expect(timelineFeedActivities.length).to.equal(0);
+    // follow and see if we got the record
+    const relation = await fm.follow(timelineFederico, userBen);
+    timelineFeedActivities = await fm.readFeed(timelineFederico, 3);
+    expect(timelineFeedActivities.length).to.equal(1);
+  });
 });

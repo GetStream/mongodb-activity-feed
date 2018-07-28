@@ -6,8 +6,11 @@
   "author": "Thierry Schellenbach",
   "license": "BSD",
   "private": false,
+  "scripts": {
+    "precommit": "pretty-quick --staged"
+  },
   "dependencies": {
-    "bull": "^3.4.2",
+    "bull": "^3.4.4",
     "dotenv": "^6.0.0",
     "express": "^4.16.3",
     "ioredis": "^3.2.2",
@@ -32,13 +35,20 @@
     "chai-http": "^4.0.0",
     "clarify": "^2.1.0",
     "codecov": "^3.0.3",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb": "17.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.9.1",
     "flatted": "^0.2.3",
     "get-port": "^3.2.0",
+    "husky": "^0.14.3",
     "mocha": "^5.2.0",
     "mock-require": "^3.0.2",
     "nock": "^9.4.1",
-    "prettier": "^1.13.7",
+    "prettier": "1.13.7",
     "prettierrc": "^0.0.0-5",
+    "pretty-quick": "^1.6.0",
     "sinon": "^6.1.2",
     "trace": "^3.1.0"
   }
