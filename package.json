@@ -1,13 +1,15 @@
 {
   "name": "mongodb-activity-feed",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "Activity Feeds, Timeline, Notification Feed, News Feed with MongoDB, Mongo",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Thierry Schellenbach",
   "license": "BSD",
   "private": false,
   "scripts": {
-    "precommit": "pretty-quick --staged"
+    "precommit": "pretty-quick --staged",
+    "build": "npx babel src --out-dir dist --ignore node_modules",
+    "test": "NODE_ENV=test node_modules/mocha/bin/_mocha --timeout 15000 --require test-entry.js \"test/**/*.js\""
   },
   "dependencies": {
     "bull": "^3.4.4",
