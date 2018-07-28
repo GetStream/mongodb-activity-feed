@@ -13,7 +13,6 @@ export const ActivityFeedSchema = new Schema(
 			type: Schema.Types.ObjectId,
             ref: 'Activity',
             required: true,
-            index: true,
 			autopopulate: true,
 		},
         operation: {
@@ -24,7 +23,12 @@ export const ActivityFeedSchema = new Schema(
             type: Date,
             default: Date.now,
 			required: true,
-        }
+        },
+		origin: {
+			type: Schema.Types.ObjectId,
+			ref: 'Feed',
+			required: true,
+		}
 	},
 	{ collection: 'activity_feed' },
 );
