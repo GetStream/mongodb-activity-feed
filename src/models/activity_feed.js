@@ -15,11 +15,16 @@ export const ActivityFeedSchema = new Schema(
             required: true,
 			autopopulate: true,
 		},
+		time: {
+            type: Date,
+            default: Date.now,
+			required: true,
+        },
         operation: {
 			type: Number,
 	        required: true
         },
-        time: {
+		operationTime: {
             type: Date,
             default: Date.now,
 			required: true,
