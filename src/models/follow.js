@@ -19,6 +19,8 @@ export const FollowSchema = new Schema(
 	{ collection: 'follow' },
 );
 
+FollowSchema.index({ source: 1, target: 1 }, { unique: true });
+
 FollowSchema.plugin(timestamps);
 
 module.exports = exports = mongoose.model('Follow', FollowSchema);

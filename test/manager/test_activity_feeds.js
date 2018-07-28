@@ -16,10 +16,12 @@ const REMOVE_OPERATION = 2
 const updateOptions = {upsert: true, new:true}
 
 // TODO:
-// - unique constrains
-// - bulk insert for activity create/copy
+// - operation log time vs ordering...
+// - depedency injection for redis and mongo connection
+// - testing and code cleanup
 // - read ranked feed
 // - read aggregate feed
+// - beatify & docs
 
 
 var redlock = new Redlock(
@@ -55,13 +57,16 @@ export async function follow(source, target) {
 	const activityReferences = ActivityFeed.find({feed: target}).limit(300).sort('-time')
 
 	// write these to the source feed
-	const newReferences = []
+	const operations = []
 	for (reference of activityReferences) {
-		reference._id = null
-		reference.feed = source
-		newReferences.push(reference)
+		let document = reference.toObject()
+		document._id = null
+		document.feed = source
+		operations.push({ insertOne: { document } })
 	}
+	console.log(operations)
 	// call the bulk create
+	await ActivityFeed.bulkWrite(operations, { ordered: false })
 
 	await lock.unlock()
 }
@@ -83,12 +88,15 @@ export async function readFeed(feed, limit) {
 	const operations = await ActivityFeed.find({feed}).sort('-time').limit(1000)
 	const seen = {}
 	const activities = []
-	for (const operation in operations) {
-		if (operation.activity in seen) {
+	for (const activityOperation of operations) {
+		console.log(activityOperation)
+		if (activityOperation.activity in seen) {
 			// ignore
 		} else {
-			activities.push(operation.activity)
-			seen[operation.activity] = true
+			if (activityOperation.operation == ADD_OPERATION) {
+				activities.push(activityOperation.activity)
+			}
+			seen[activityOperation.activity] = true
 		}
 	}
 	return activities.slice(0, limit)
@@ -127,23 +135,19 @@ async function addOrRemoveActivity(activityData, feed, operation) {
 }
 
 export async function addActivity(activityData, feed) {
-	addOrRemoveActivity(activityData, feed, ADD_OPERATION)
+	return addOrRemoveActivity(activityData, feed, ADD_OPERATION)
 }
 
-export async function removeActivity(activity, feed) {
-	addOrRemoveActivity(activityData, feed, REMOVE_OPERATION)
+export async function removeActivity(activityData, feed) {
+	return addOrRemoveActivity(activityData, feed, REMOVE_OPERATION)
 }
 
-describe('Add Activity', () => {
-	before(async () => {
-		await dropDBs();
-	});
-
-	describe('Add Activity To Flat Feed', () => {
+describe('Test Feed Operations', () => {
 
 
 
 		before(async () => {
+			await dropDBs();
 			const timelineGroup = await FeedGroup.create({name: 'timeline'})
 			const userGroup = await FeedGroup.create({name: 'user'})
 
@@ -184,15 +188,25 @@ describe('Add Activity', () => {
 
 		})
 
-		it.only('should read a feed with 1 activity', async() => {
+		it('should read a feed with 1 activity', async() => {
 			const feed = await getOrCreateFeed('test', 'thierry')
 			const activityData = {actor: 'user:123', verb: 'listen', object: 'Norah Jones', duration: 50, time: '2015-06-15'}
-			addActivity(activityData, feed)
+			let activity = await addActivity(activityData, feed)
 			let activities = await readFeed(feed, 3)
 			expect(activities.length).to.equal(1)
+		})
 
+		it('should remove an activity', async() => {
+			const feed = await getOrCreateFeed('test', 'thierry')
+			const activityData = {actor: 'user:123', verb: 'listen', object: 'Norah Jones', duration: 50, time: '2015-06-15'}
+			let activity = await addActivity(activityData, feed)
+			let activity2 = await removeActivity(activityData, feed)
+			expect(activity._id.toString()).to.equal(activity2._id.toString())
+
+
+			let activities = await readFeed(feed, 3)
+			expect(activities.length).to.equal(0)
 		})
 
 
-	});
 });

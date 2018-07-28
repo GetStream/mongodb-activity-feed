@@ -16,7 +16,7 @@ export const FeedSchema = new Schema(
 	{ collection: 'feed' },
 );
 
-FeedSchema.index({ group: 1, feedID: 1 });
+FeedSchema.index({ group: 1, feedID: 1 }, { unique: true });
 
 FeedSchema.plugin(timestamps);
 
