@@ -1,0 +1,13 @@
+{
+	"plugins": ["shebang", "transform-async-generator-functions", "transform-object-rest-spread"],
+	"presets": [
+		[
+			"env",
+			{
+				"targets": {
+					"node": "current"
+				}
+			}
+		]
+	]
+}
