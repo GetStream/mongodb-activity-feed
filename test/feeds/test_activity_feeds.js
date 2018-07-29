@@ -12,17 +12,19 @@ import { expect } from "chai";
 import { FeedManager, OPERATIONS } from "../../src/index";
 
 // TODO:
+// - bull
+// - better linting configs
 // - More testing, docs and example
 // - read ranked feed
 // - read aggregate feed
-// - bull
 // - make mongo connection configurable
 // - docs & linting
 
 describe("Test Feed Operations", () => {
   let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen;
 
-  let fm = new FeedManager(db, redis);
+  const options = { bull: false };
+  let fm = new FeedManager(db, redis, options);
 
   before(async () => {
     await dropDBs();

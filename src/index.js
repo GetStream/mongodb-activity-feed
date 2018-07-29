@@ -12,12 +12,16 @@ export const OPERATIONS = { ADD_OPERATION: 1, REMOVE_OPERATION: 2 };
 const updateOptions = { upsert: true, new: true };
 
 export class FeedManager {
-  constructor(mongoConnection, redisConnection) {
+  constructor(mongoConnection, redisConnection, options) {
     this.mongoConnection = mongoConnection;
     this.redisConnection = redisConnection;
     this.redlock = this._createLock();
     this.queue = new Queue("activity feed", redisConnection);
-    this.bull = true;
+    if (!options) {
+      options = {};
+    }
+    const defaultOptions = { bull: false };
+    this.options = { ...defaultOptions, ...options };
   }
 
   async follow(source, target) {
@@ -100,26 +104,30 @@ export class FeedManager {
     const groups = chunkify(followers, 500);
     let origin = feed;
     for (const group of groups) {
-      if (this.bull) {
-        this.queue.add({ group, origin });
+      if (this.options.bull) {
+        this.queue.add({ activity, group, origin, operation });
       } else {
-        let operations = [];
-        for (const follow of group) {
-          let document = {
-            feed: follow.source,
-            activity: activity,
-            operation: operation,
-            time: activity.time,
-            origin
-          };
-          operations.push({ insertOne: { document } });
-        }
-        if (operations.length >= 1) {
-          await ActivityFeed.bulkWrite(operations, { ordered: false });
-        }
+        await this._fanout(activity, group, origin, operation);
       }
     }
     return activity;
+  }
+
+  async _fanout(activity, group, origin, operation) {
+    let operations = [];
+    for (const follow of group) {
+      let document = {
+        feed: follow.source,
+        activity: activity,
+        operation: operation,
+        time: activity.time,
+        origin
+      };
+      operations.push({ insertOne: { document } });
+    }
+    if (operations.length >= 1) {
+      await ActivityFeed.bulkWrite(operations, { ordered: false });
+    }
   }
 
   async readFeed(feed, limit) {
