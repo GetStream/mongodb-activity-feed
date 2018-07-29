@@ -5,13 +5,7 @@ I created it for this blogpost: "Building Activity Feeds with MongoDB vs the alt
 
 https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/edit
 
-It uses CRDTs https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type to reduce the need for locks.
-
-## News Feed Mongo
-
-## Notification Feed Node
-
-## Timeline
+It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to reduce the need for locks.
 
 ### Init
 
@@ -20,6 +14,12 @@ import {FeedManager} from 'mongodb-activity-feed'
 const fm = new FeedManager(mongoConnection, redisConnection)
 fm.feed('user', '123')
 ```
+
+## News Feed Mongo
+
+## Notification Feed Node
+
+## Timeline
 
 ### Adding an activity
 

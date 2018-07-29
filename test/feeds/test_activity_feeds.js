@@ -12,13 +12,13 @@ import { expect } from "chai";
 import { FeedManager, OPERATIONS } from "../../src/index";
 
 // TODO:
-// - bull
-// - better linting configs
-// - More testing, docs and example
+// - readme update
+// - linting configs
+// - examples folder
 // - read ranked feed
 // - read aggregate feed
 // - make mongo connection configurable
-// - docs & linting
+// - activity unqiqueness is not well defined
 
 describe("Test Feed Operations", () => {
   let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen;
