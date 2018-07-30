@@ -7,10 +7,10 @@ import { expect } from 'chai'
 import { FeedManager } from '../../src/index'
 
 // TODO:
-// - activity uniqueness is not well defined
+// - examples for spotify and pinterest style feeds
 // - readme update
-// - examples folder
-// - make mongo connection configurable
+// - Do we need an API?
+// - make mongo connection really configurable (need to research a bit about mongoose and packages)
 
 describe('Test Feed Operations', () => {
 	let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen
@@ -52,6 +52,23 @@ describe('Test Feed Operations', () => {
 		expect(activity._id.toString()).to.equal(activity2._id.toString())
 	})
 
+	it('should update an activity', async () => {
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'Norah Jones',
+			foreign_id: 'listen:1',
+			duration: 50,
+			time: '2015-06-15',
+		}
+		const activity = await fm.addActivity(activityData, userJosh)
+		expect(activity.extra.duration).to.equal(50)
+		activityData.duration = 60
+		const activity2 = await fm.addActivity(activityData, userJosh)
+		expect(activity._id.toString()).to.equal(activity2._id.toString())
+		expect(activity2.extra.duration).to.equal(60)
+	})
+
 	it('should follow a feed', async () => {
 		await fm.follow(timelineScott, userJosh)
 	})
@@ -59,6 +76,25 @@ describe('Test Feed Operations', () => {
 	it('should unfollow a feed', async () => {
 		await fm.follow(timelineScott, userJosh)
 		await fm.unfollow(timelineScott, userJosh)
+	})
+
+	it('should be empty after unfollow', async () => {
+		const timeline = await fm.getOrCreateFeed('timeline', 'unfollowtest')
+		const user = await fm.getOrCreateFeed('user', 'targetunfollowtest')
+		await fm.follow(timeline, user)
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'RHCP',
+			duration: 520,
+			time: '2011-06-15',
+		}
+		await fm.addActivity(activityData, user)
+		let activities = await fm.readFeed(timeline, 0, 3)
+		expect(activities.length).to.equal(1)
+		await fm.unfollow(timelineScott, userJosh)
+		activities = await fm.readFeed(timeline, 0, 3)
+		expect(activities.length).to.equal(1)
 	})
 
 	it('should read an empty feed', async () => {

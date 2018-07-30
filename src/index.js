@@ -73,19 +73,19 @@ export class FeedManager {
 
 	async addOrRemoveActivity(activityData, feed, operation) {
 		// create the activity
-		let { actor, verb, object, target, time, ...extra } = activityData
+		let { actor, verb, object, target, time, foreign_id, ...extra } = activityData
 		if (!time) {
 			time = new Date()
 		}
-		const values = {
-			actor: actor,
-			verb: verb,
-			object: object,
-			target: target,
-			time: time,
-			extra: extra,
+		const values = { actor, verb, object, target, time, foreign_id, extra }
+
+		let search
+		if (values.foreign_id) {
+			search = { foreign_id: values.foreign_id, time: values.time }
+		} else {
+			search = { ...values }
 		}
-		const activity = await Activity.findOneAndUpdate(values, values, {
+		const activity = await Activity.findOneAndUpdate(search, values, {
 			upsert: true,
 			new: true,
 		})

@@ -15,6 +15,10 @@ export const ActivitySchema = new Schema(
 			type: String,
 			required: true,
 		},
+		foreign_id: {
+			type: String,
+			required: true,
+		},
 		target: {
 			type: String,
 			required: false,
