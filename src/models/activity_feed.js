@@ -1,5 +1,5 @@
-import mongoose, { Schema } from 'mongoose';
-import autopopulate from 'mongoose-autopopulate';
+import mongoose, { Schema } from 'mongoose'
+import autopopulate from 'mongoose-autopopulate'
 
 export const ActivityFeedSchema = new Schema(
 	{
@@ -36,9 +36,9 @@ export const ActivityFeedSchema = new Schema(
 		},
 	},
 	{ collection: 'activity_feed' },
-);
+)
 
-ActivityFeedSchema.index({ feed: 1, time: -1 });
-ActivityFeedSchema.plugin(autopopulate);
+ActivityFeedSchema.index({ feed: 1, time: -1 })
+ActivityFeedSchema.plugin(autopopulate)
 
-module.exports = exports = mongoose.model('ActivityFeed', ActivityFeedSchema);
+module.exports = exports = mongoose.model('ActivityFeed', ActivityFeedSchema)

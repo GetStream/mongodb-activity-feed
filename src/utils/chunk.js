@@ -1,9 +1,9 @@
 function chunkify(iterable, size) {
-	const chunks = [];
+	const chunks = []
 	for (let i = 0, j = iterable.length; i < j; i += size) {
-		chunks.push(iterable.slice(i, i + size));
+		chunks.push(iterable.slice(i, i + size))
 	}
-	return chunks;
+	return chunks
 }
 
-export default chunkify;
+export default chunkify

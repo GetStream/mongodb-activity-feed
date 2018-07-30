@@ -1,5 +1,5 @@
-import mongoose, { Schema } from 'mongoose';
-import timestamps from 'mongoose-timestamp';
+import mongoose, { Schema } from 'mongoose'
+import timestamps from 'mongoose-timestamp'
 
 export const ActivitySchema = new Schema(
 	{
@@ -28,8 +28,8 @@ export const ActivitySchema = new Schema(
 		},
 	},
 	{ collection: 'activity' },
-);
+)
 
-ActivitySchema.plugin(timestamps);
+ActivitySchema.plugin(timestamps)
 
-module.exports = exports = mongoose.model('Activity', ActivitySchema);
+module.exports = exports = mongoose.model('Activity', ActivitySchema)

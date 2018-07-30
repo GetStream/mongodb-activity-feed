@@ -31,4 +31,4 @@ module.exports = {
 		'no-console': 0,
 		'keyword-spacing': ['error'],
 	},
-};
+}

@@ -1,5 +1,5 @@
-import mongoose, { Schema } from 'mongoose';
-import timestamps from 'mongoose-timestamp';
+import mongoose, { Schema } from 'mongoose'
+import timestamps from 'mongoose-timestamp'
 
 export const FollowSchema = new Schema(
 	{
@@ -17,10 +17,10 @@ export const FollowSchema = new Schema(
 		},
 	},
 	{ collection: 'follow' },
-);
+)
 
-FollowSchema.index({ source: 1, target: 1 }, { unique: true });
+FollowSchema.index({ source: 1, target: 1 }, { unique: true })
 
-FollowSchema.plugin(timestamps);
+FollowSchema.plugin(timestamps)
 
-module.exports = exports = mongoose.model('Follow', FollowSchema);
+module.exports = exports = mongoose.model('Follow', FollowSchema)

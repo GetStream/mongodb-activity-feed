@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
-import config from '../config';
-import logger from './logger';
+import config from '../config'
+import logger from './logger'
 
-mongoose.Promise = global.Promise;
+mongoose.Promise = global.Promise
 
 const connection = mongoose.connect(
 	config.database.uri,
@@ -15,7 +15,7 @@ const connection = mongoose.connect(
 		bufferMaxEntries: 0,
 		keepAlive: 120,
 	},
-);
+)
 
 connection
 	.then(db => {
@@ -23,16 +23,16 @@ connection
 			`Successfully connected to ${config.database.uri} MongoDB cluster in ${
 				config.env
 			} mode.`,
-		);
-		return db;
+		)
+		return db
 	})
 	.catch(err => {
 		if (err.message.code === 'ETIMEDOUT') {
-			logger.info('Attempting to re-establish database connection.');
-			mongoose.connect(config.database.uri);
+			logger.info('Attempting to re-establish database connection.')
+			mongoose.connect(config.database.uri)
 		} else {
-			logger.error('Error while attempting to connect to database:', { err });
+			logger.error('Error while attempting to connect to database:', { err })
 		}
-	});
+	})
 
-export default connection;
+export default connection

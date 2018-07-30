@@ -1,5 +1,5 @@
-import mongoose, { Schema } from 'mongoose';
-import timestamps from 'mongoose-timestamp';
+import mongoose, { Schema } from 'mongoose'
+import timestamps from 'mongoose-timestamp'
 
 export const FeedSchema = new Schema(
 	{
@@ -14,10 +14,10 @@ export const FeedSchema = new Schema(
 		},
 	},
 	{ collection: 'feed' },
-);
+)
 
-FeedSchema.index({ group: 1, feedID: 1 }, { unique: true });
+FeedSchema.index({ group: 1, feedID: 1 }, { unique: true })
 
-FeedSchema.plugin(timestamps);
+FeedSchema.plugin(timestamps)
 
-module.exports = exports = mongoose.model('Feed', FeedSchema);
+module.exports = exports = mongoose.model('Feed', FeedSchema)
