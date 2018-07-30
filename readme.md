@@ -50,7 +50,14 @@ fm.unfollow(a, b)
 fm.readFeed('user', '123', options)
 ```
 
-## Running tests
+## Pros/Cons
+
+The cost/performance of a MongoDB based activity feed is substantially worse compared to Stream (https://getstream.io/).
+Unless you need to run your feeds on-prem you should not use this in prod.
+
+## Contributing
+
+### Running tests
 
 ```
 NODE_ENV=test node_modules/mocha/bin/_mocha --timeout 15000 --require test-entry.js "test/**/*.js"
@@ -62,7 +69,8 @@ Or if you're lazy
 yarn test
 ```
 
-## Pros/Cons
+### Linting
 
-The cost/performance of a MongoDB based activity feed is substantially worse compared to Stream (https://getstream.io/).
-Unless you need to run your feeds on-prem you should not use this in prod.
+```
+yarn lint
+```

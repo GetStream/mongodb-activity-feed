@@ -62,7 +62,7 @@ async function runExamples() {
 }
 
 runExamples()
-  .then(response => {
+  .then(() => {
     console.log("all done");
   })
   .catch(err => {

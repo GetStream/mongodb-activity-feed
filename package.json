@@ -12,7 +12,8 @@
   "scripts": {
     "precommit": "pretty-quick --staged",
     "build": "npx babel src --out-dir dist --ignore node_modules",
-    "test": "NODE_ENV=test node_modules/mocha/bin/_mocha --timeout 15000 --require test-entry.js \"test/**/*.js\""
+    "test": "NODE_ENV=test node_modules/mocha/bin/_mocha --timeout 15000 --require test-entry.js \"test/**/*.js\"",
+    "lint": "npx eslint \"**/*.js\""
   },
   "dependencies": {
     "bull": "^3.4.4",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.6",
     "babel-plugin-istanbul": "^4.1.6",
     "babel-plugin-shebang": "^0.0.0",
     "babel-plugin-transform-async-generator-functions": "^6.24.1",
@@ -40,8 +42,9 @@
     "chai-http": "^4.0.0",
     "clarify": "^2.1.0",
     "codecov": "^3.0.3",
-    "eslint": "^4.19.1",
+    "eslint": "^5.2.0",
     "eslint-config-airbnb": "17.0.0",
+    "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.9.1",

@@ -1,24 +1,16 @@
 import { dropDBs } from "../../test/utils.js";
-import Activity from "../../src/models/activity";
-import FeedGroup from "../../src/models/feed_group";
-import Feed from "../../src/models/feed";
-import ActivityFeed from "../../src/models/activity_feed";
-import Follow from "../../src/models/follow";
 import redis from "../../src/utils/redis";
 import db from "../../src/utils/db";
 
 import { expect } from "chai";
 
-import { FeedManager, OPERATIONS } from "../../src/index";
+import { FeedManager } from "../../src/index";
 
 // TODO:
+// - activity uniqueness is not well defined
 // - readme update
-// - linting configs
 // - examples folder
-// - read ranked feed
-// - read aggregate feed
 // - make mongo connection configurable
-// - activity unqiqueness is not well defined
 
 describe("Test Feed Operations", () => {
   let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen;
@@ -63,12 +55,12 @@ describe("Test Feed Operations", () => {
   });
 
   it("should follow a feed", async () => {
-    const relation = await fm.follow(timelineScott, userJosh);
+    await fm.follow(timelineScott, userJosh);
   });
 
   it("should unfollow a feed", async () => {
-    const relation = await fm.follow(timelineScott, userJosh);
-    const relation2 = await fm.unfollow(timelineScott, userJosh);
+    await fm.follow(timelineScott, userJosh);
+    await fm.unfollow(timelineScott, userJosh);
   });
 
   it("should read an empty feed", async () => {
@@ -86,7 +78,7 @@ describe("Test Feed Operations", () => {
       duration: 50,
       time: "2015-06-15"
     };
-    let activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     let activities = await fm.readFeed(feed, 0, 3);
     expect(activities.length).to.equal(1);
   });
@@ -100,7 +92,7 @@ describe("Test Feed Operations", () => {
       popularity: 10,
       time: "2017-06-15"
     };
-    let activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     activityData = {
       actor: "user:123",
       verb: "listen",
@@ -108,7 +100,7 @@ describe("Test Feed Operations", () => {
       popularity: 20,
       time: "2015-06-15"
     };
-    activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     let activities = await fm.readFeed(feed, 0, 3);
     expect(activities.length).to.equal(2);
     // first one should be norah jones since time is 2017
@@ -124,7 +116,7 @@ describe("Test Feed Operations", () => {
       popularity: 10,
       time: "2017-06-15"
     };
-    let activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     activityData = {
       actor: "user:123",
       verb: "listen",
@@ -135,7 +127,7 @@ describe("Test Feed Operations", () => {
     let rankingMethod = (a, b) => {
       return b.popularity - a.popularity;
     };
-    activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     let activities = await fm.readFeed(feed, 0, 3, rankingMethod);
     expect(activities.length).to.equal(2);
     // first one should be savage garden since its more popular
@@ -151,7 +143,7 @@ describe("Test Feed Operations", () => {
       popularity: 10,
       time: "2017-06-15"
     };
-    let activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     activityData = {
       actor: "user:123",
       verb: "listen",
@@ -163,7 +155,7 @@ describe("Test Feed Operations", () => {
     let aggregationMethod = activity => {
       return activity.verb + "__" + activity.actor;
     };
-    activity = await fm.addActivity(activityData, feed);
+    await fm.addActivity(activityData, feed);
     let groups = await fm.readFeed(feed, 0, 3, null, aggregationMethod);
     expect(groups.length).to.equal(1);
     expect(groups[0].activities.length).to.equal(2);
@@ -187,14 +179,14 @@ describe("Test Feed Operations", () => {
   });
 
   it("should fanout when adding an activity", async () => {
-    const relation = await fm.follow(timelineTom, userAlex);
+    await fm.follow(timelineTom, userAlex);
     const activityData = {
       actor: "user:123",
       verb: "listen",
       object: "Carrie Underwood",
       duration: 55
     };
-    let activity = await fm.addActivity(activityData, userAlex);
+    await fm.addActivity(activityData, userAlex);
     let userFeedActivities = await fm.readFeed(userAlex, 0, 3);
     expect(userFeedActivities.length).to.equal(1);
     let timelineFeedActivities = await fm.readFeed(timelineTom, 0, 3);
@@ -208,7 +200,7 @@ describe("Test Feed Operations", () => {
       object: "Carrie Underwood",
       duration: 55
     };
-    let activity = await fm.addActivity(activityData, userBen);
+    await fm.addActivity(activityData, userBen);
     // verify there is 1 activity in the user feed
     let userFeedActivities = await fm.readFeed(userBen, 0, 3);
     expect(userFeedActivities.length).to.equal(1);
@@ -216,7 +208,7 @@ describe("Test Feed Operations", () => {
     let timelineFeedActivities = await fm.readFeed(timelineFederico, 0, 3);
     expect(timelineFeedActivities.length).to.equal(0);
     // follow and see if we got the record
-    const relation = await fm.follow(timelineFederico, userBen);
+    await fm.follow(timelineFederico, userBen);
     timelineFeedActivities = await fm.readFeed(timelineFederico, 0, 3);
     expect(timelineFeedActivities.length).to.equal(1);
   });

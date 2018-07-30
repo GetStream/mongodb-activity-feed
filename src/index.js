@@ -52,6 +52,7 @@ export class FeedManager {
       await ActivityFeed.bulkWrite(operations, { ordered: false });
     }
     await lock.unlock();
+    return follow;
   }
 
   async unfollow(source, target) {
@@ -61,12 +62,13 @@ export class FeedManager {
     const follow = await Follow.findOneAndDelete({ source, target });
 
     // remove the activities with the given origin
-    const activityReferences = await ActivityFeed.remove({
+    await ActivityFeed.remove({
       feed: source,
       origin: target
     });
 
     await lock.unlock();
+    return follow;
   }
 
   async addOrRemoveActivity(activityData, feed, operation) {
@@ -89,7 +91,7 @@ export class FeedManager {
     });
 
     // create the activity feed for the primary feed
-    const activityFeed = await ActivityFeed.create({
+    await ActivityFeed.create({
       feed: feed,
       activity: activity,
       operation: operation,
@@ -150,7 +152,7 @@ export class FeedManager {
       if (activityOperation.activity in seen) {
         // ignore
       } else {
-        if (activityOperation.operation == OPERATIONS.ADD_OPERATION) {
+        if (activityOperation.operation === OPERATIONS.ADD_OPERATION) {
           activities.push(activityOperation.activity);
         }
         seen[activityOperation.activity] = true;
