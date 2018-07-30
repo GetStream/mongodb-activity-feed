@@ -1,6 +1,6 @@
-import Redis from "ioredis";
+import Redis from 'ioredis';
 
-import config from "../config";
+import config from '../config';
 
 const redis = new Redis(config.redis.uri);
 
