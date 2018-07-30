@@ -87,8 +87,86 @@ describe("Test Feed Operations", () => {
       time: "2015-06-15"
     };
     let activity = await fm.addActivity(activityData, feed);
-    let activities = await fm.readFeed(feed, 3);
+    let activities = await fm.readFeed(feed, 0, 3);
     expect(activities.length).to.equal(1);
+  });
+
+  it("should read a feed in chronological order", async () => {
+    const feed = await fm.getOrCreateFeed("chronological", "scott");
+    let activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      popularity: 10,
+      time: "2017-06-15"
+    };
+    let activity = await fm.addActivity(activityData, feed);
+    activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Savage Garden",
+      popularity: 20,
+      time: "2015-06-15"
+    };
+    activity = await fm.addActivity(activityData, feed);
+    let activities = await fm.readFeed(feed, 0, 3);
+    expect(activities.length).to.equal(2);
+    // first one should be norah jones since time is 2017
+    expect(activities[0].popularity).to.equal(10);
+  });
+
+  it("should read a ranked feed", async () => {
+    const feed = await fm.getOrCreateFeed("ranking", "scott");
+    let activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      popularity: 10,
+      time: "2017-06-15"
+    };
+    let activity = await fm.addActivity(activityData, feed);
+    activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Savage Garden",
+      popularity: 20,
+      time: "2015-06-15"
+    };
+    let rankingMethod = (a, b) => {
+      return b.popularity - a.popularity;
+    };
+    activity = await fm.addActivity(activityData, feed);
+    let activities = await fm.readFeed(feed, 0, 3, rankingMethod);
+    expect(activities.length).to.equal(2);
+    // first one should be savage garden since its more popular
+    expect(activities[0].popularity).to.equal(20);
+  });
+
+  it("should aggregate a feed", async () => {
+    const feed = await fm.getOrCreateFeed("agg", "scott");
+    let activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Norah Jones",
+      popularity: 10,
+      time: "2017-06-15"
+    };
+    let activity = await fm.addActivity(activityData, feed);
+    activityData = {
+      actor: "user:123",
+      verb: "listen",
+      object: "Savage Garden",
+      popularity: 20,
+      time: "2015-06-15"
+    };
+    // group together all activities with the same verb and actor
+    let aggregationMethod = activity => {
+      return activity.verb + "__" + activity.actor;
+    };
+    activity = await fm.addActivity(activityData, feed);
+    let groups = await fm.readFeed(feed, 0, 3, null, aggregationMethod);
+    expect(groups.length).to.equal(1);
+    expect(groups[0].activities.length).to.equal(2);
   });
 
   it("should remove an activity", async () => {
@@ -104,7 +182,7 @@ describe("Test Feed Operations", () => {
     let activity2 = await fm.removeActivity(activityData, feed);
     expect(activity._id.toString()).to.equal(activity2._id.toString());
 
-    let activities = await fm.readFeed(feed, 3);
+    let activities = await fm.readFeed(feed, 0, 3);
     expect(activities.length).to.equal(0);
   });
 
@@ -117,9 +195,9 @@ describe("Test Feed Operations", () => {
       duration: 55
     };
     let activity = await fm.addActivity(activityData, userAlex);
-    let userFeedActivities = await fm.readFeed(userAlex, 3);
+    let userFeedActivities = await fm.readFeed(userAlex, 0, 3);
     expect(userFeedActivities.length).to.equal(1);
-    let timelineFeedActivities = await fm.readFeed(timelineTom, 3);
+    let timelineFeedActivities = await fm.readFeed(timelineTom, 0, 3);
     expect(timelineFeedActivities.length).to.equal(1);
   });
 
@@ -132,14 +210,14 @@ describe("Test Feed Operations", () => {
     };
     let activity = await fm.addActivity(activityData, userBen);
     // verify there is 1 activity in the user feed
-    let userFeedActivities = await fm.readFeed(userBen, 3);
+    let userFeedActivities = await fm.readFeed(userBen, 0, 3);
     expect(userFeedActivities.length).to.equal(1);
     // verify the timeline is empty
-    let timelineFeedActivities = await fm.readFeed(timelineFederico, 3);
+    let timelineFeedActivities = await fm.readFeed(timelineFederico, 0, 3);
     expect(timelineFeedActivities.length).to.equal(0);
     // follow and see if we got the record
     const relation = await fm.follow(timelineFederico, userBen);
-    timelineFeedActivities = await fm.readFeed(timelineFederico, 3);
+    timelineFeedActivities = await fm.readFeed(timelineFederico, 0, 3);
     expect(timelineFeedActivities.length).to.equal(1);
   });
 });

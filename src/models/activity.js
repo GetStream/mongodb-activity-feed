@@ -20,7 +20,7 @@ export const ActivitySchema = new Schema(
       required: false
     },
     extra: {
-      type: Map
+      type: Object
     },
     time: {
       type: Date,

@@ -130,17 +130,18 @@ export class FeedManager {
     }
   }
 
-  async readFeed(feed, limit) {
+  async readFeed(feed, offset, limit, rankingMethod, aggregationMethod) {
     // read the feed sorted by the activity time
+    const searchDepth = 3000;
     const operations = await ActivityFeed.find({ feed })
       .sort({ time: -1, operationTime: -1 })
-      .limit(1000);
+      .limit(searchDepth);
     // next order by the operationTime to handle scenarios where people add/remove
     operations.sort((a, b) => {
       return b.operationTime - a.operationTime;
     });
     // TODO: there are edge cases here with add/remove on older activities
-    // For example if you add 1 activity with a recent time 500 times and remove it 500 times.
+    // For example if you add 1 activity with a recent time 1500 times and remove it 1500 times.
     // Next you add an activity with an older time
     // the feed will show up empty
     const seen = {};
@@ -155,7 +156,46 @@ export class FeedManager {
         seen[activityOperation.activity] = true;
       }
     }
-    return activities.slice(0, limit);
+    // add the extra properties back to the object
+    let serialized = [];
+
+    for (const activity of activities) {
+      let activityData = activity.toObject();
+      let { extra, ...others } = activityData;
+      let serializedActivity = { ...extra, ...others };
+      serialized.push(serializedActivity);
+    }
+
+    if (aggregationMethod && rankingMethod) {
+      throw new Error("cant use both ranking and aggregation at the same time");
+    }
+
+    // support aggregation
+    let aggregated;
+    if (aggregationMethod) {
+      aggregated = {};
+      for (const activity of serialized) {
+        const key = aggregationMethod(activity);
+        if (!(key in aggregated)) {
+          aggregated[key] = { group: key, time: activity.time, activities: [] };
+        }
+        aggregated[key].activities.push(activity);
+      }
+      serialized = Object.values(aggregated);
+    }
+
+    // ensure that we are sorted by time and not operation time
+    if (rankingMethod) {
+      serialized.sort(rankingMethod);
+    } else {
+      serialized.sort((a, b) => {
+        return b.time - a.time;
+      });
+    }
+
+    let selectedActivities = serialized.slice(offset, limit);
+
+    return selectedActivities;
   }
 
   async getOrCreateFeed(name, feedID) {
