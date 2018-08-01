@@ -20,6 +20,7 @@
 		"bull": "^3.4.4",
 		"dotenv": "^6.0.0",
 		"express": "^4.16.3",
+		"getstream": "^3.19.0",
 		"ioredis": "^3.2.2",
 		"mongodb": "^3.1.1",
 		"mongoose": "^5.2.1",
