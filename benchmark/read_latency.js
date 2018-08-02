@@ -1,14 +1,12 @@
-import stream from 'getstream'
-
-let client = stream.connect(
-	process.env.API_KEY,
-	process.env.API_SECRET,
-)
+import { getStreamClient, Timer, runBenchmark } from './utils'
 
 let activities = []
+
+let client = getStreamClient()
+const t = new Timer()
 let feed = client.feed('timeline_aggregated', 'test')
 
-for (let i = 0; i < 1000; i++) {
+for (let i = 0; i < 3000; i++) {
 	let activity = {
 		foreign_id: `test:${i}`,
 		time: '2018-08-01T04:06:02.223654',
@@ -20,27 +18,24 @@ for (let i = 0; i < 1000; i++) {
 }
 
 async function prepareBenchmark() {
-	let response = await feed.addActivities(activities)
-	console.log(response.duration)
+	await feed.addActivities(activities.slice(0, 1000))
+	await feed.addActivities(activities.slice(1000, 2000))
+	await feed.addActivities(activities.slice(2000, 3000))
+
+	console.log('starting benchmark now')
 }
 
-async function benchmarkReads() {
+async function benchmarkReads(n) {
 	let response = await feed.get({ limit: 20 })
+	t.duration('read feed', response.duration.replace('ms', '') * 1)
 	return response
 }
 
 async function run() {
 	await prepareBenchmark()
+	await runBenchmark(benchmarkReads, process.env.REPETITIONS, process.env.CONCURRENCY)
 
-	let concurrency = process.env.CONCURRENCY || 1
-	let promises = []
-	for (let i = 0; i < concurrency; i++) {
-		promises.push(benchmarkReads())
-	}
-	let results = await Promise.all(promises)
-	for (const result of results) {
-		console.log(result.duration)
-	}
+	t.summarize()
 }
 
 run()

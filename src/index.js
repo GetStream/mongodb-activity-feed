@@ -6,10 +6,39 @@ import Follow from './models/follow'
 import chunkify from './utils/chunk'
 import Redlock from 'redlock'
 import Queue from 'bull'
+import faye from 'faye'
 
 export const OPERATIONS = { ADD_OPERATION: 1, REMOVE_OPERATION: 2 }
 
 const updateOptions = { upsert: true, new: true }
+
+// does nothing, just calls the callback with all the data
+export class DummyFirehose {
+	constructor(callback) {
+		this.callback = callback
+	}
+	async notify(byFeed) {
+		await this.callback(byFeed)
+	}
+}
+
+// faye realtime notifications
+export class FayeFirehose {
+	constructor(fayeURL) {
+		this.fayeClient = new faye.Client(fayeURL)
+	}
+	async notify(byFeed) {
+		let promises = []
+		for (const [feed, operations] of Object.values(byFeed)) {
+			let channel = `/feed-${feed}`
+			console.log(channel)
+			// TODO: Channel seems wrong
+			let promise = this.fayeClient.publish(channel, { operations, feed })
+			promises.push(promise)
+		}
+		return Promise.all(promises)
+	}
+}
 
 export class FeedManager {
 	constructor(mongoConnection, redisConnection, options) {
@@ -20,8 +49,15 @@ export class FeedManager {
 		if (!options) {
 			options = {}
 		}
-		const defaultOptions = { bull: false }
+		const defaultOptions = { bull: false, firehose: false }
 		this.options = { ...defaultOptions, ...options }
+	}
+
+	async followMany(pairs) {
+		// TODO: not super fast, but doesnt impact our benchmark so fine.
+		for (const [source, target] of Object.entries(pairs)) {
+			await this.follow(source, target)
+		}
 	}
 
 	async follow(source, target) {
@@ -129,6 +165,20 @@ export class FeedManager {
 		}
 		if (operations.length >= 1) {
 			await ActivityFeed.bulkWrite(operations, { ordered: false })
+			await this.notify(operations)
+		}
+	}
+
+	async notify(operations) {
+		const byFeed = {}
+		if (this.options.firehose) {
+			for (const operation of operations) {
+				if (!(operation.feed in byFeed)) {
+					byFeed[operation.feed] = []
+				}
+				byFeed[operation.feed].push(operation)
+			}
+			await this.options.firehose.notify(byFeed)
 		}
 	}
 

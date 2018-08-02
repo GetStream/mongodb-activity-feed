@@ -7,9 +7,12 @@ import { expect } from 'chai'
 import { FeedManager } from '../../src/index'
 
 // TODO:
+// - Faye integration
+// - 6 benchmark scripts
 // - examples for spotify and pinterest style feeds
 // - readme update
-// - Do we need an API?
+// - API
+// - Add Many
 // - make mongo connection really configurable (need to research a bit about mongoose and packages)
 
 describe('Test Feed Operations', () => {
