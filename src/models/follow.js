@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
 import timestamps from 'mongoose-timestamp'
+import autopopulate from 'mongoose-autopopulate'
 
 export const FollowSchema = new Schema(
 	{
@@ -7,6 +8,7 @@ export const FollowSchema = new Schema(
 			type: Schema.Types.ObjectId,
 			ref: 'Feed',
 			required: true,
+			autopopulate: true,
 			index: true,
 		},
 		target: {
@@ -22,5 +24,6 @@ export const FollowSchema = new Schema(
 FollowSchema.index({ source: 1, target: 1 }, { unique: true })
 
 FollowSchema.plugin(timestamps)
+FollowSchema.plugin(autopopulate)
 
 module.exports = exports = mongoose.model('Follow', FollowSchema)

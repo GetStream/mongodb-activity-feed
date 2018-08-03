@@ -1,34 +1,46 @@
 import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
+import { FayeFirehose } from '../src/index'
+import http from 'http'
+import faye from 'faye'
+const FAYE_URL = 'http://localhost:8000/faye'
 
 const fm = getFeedManager()
 const t = new Timer()
 const followers = 10000
 let targetID = `nick${followers}`
-console.log(targetID)
-// nick is very popular
 
-const follows = []
+// setup faye
+var server = http.createServer(),
+	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
 
-for (let i = 0; i < followers; i++) {
-	const source = `timeline:${i}`
-	const target = `user:${targetID}`
-	follows.push({ source, target })
-}
+bayeux.attach(server)
+server.listen(8000)
+
+const fayeFirehose = new FayeFirehose(FAYE_URL)
+fm.options.firehose = fayeFirehose
 
 async function prepareBenchmark() {
 	// setup the follow relationships
+	const follows = []
+	for (let i = 0; i < followers; i++) {
+		const source = await fm.getOrCreateFeed('timeline', i)
+		const target = await fm.getOrCreateFeed('user', targetID)
+		follows.push({ source, target })
+	}
 	for (const group of chunkify(follows, 1000)) {
 		await fm.followMany(group)
 	}
-	console.log(`created ${follows.length} follow relationships`)
 	// listen to changes in the last feed
-	const connected = await client.feed('timeline', followers - 1).subscribe(data => {
-		if (data.new && data.new[0]) {
-			t.stop('fanout and realtime', data.new[0].foreign_id)
-		}
-	})
-	console.log(connected)
+	let feedID = followers - 1
+	const connected = await fayeFirehose.fayeClient.subscribe(
+		`/feed-timeline--${feedID}`,
+		message => {
+			let foreignID = message.operations[0].activity.foreign_id
+			t.stop('fanout and realtime', foreignID)
+		},
+	)
+	console.log('connected', connected)
 }
 
 async function benchmarkFanout(n) {

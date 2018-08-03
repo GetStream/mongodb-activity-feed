@@ -68,9 +68,11 @@ export class FeedManager {
 
 	async followMany(pairs) {
 		// TODO: not super fast, but doesnt impact our benchmark so fine.
-		for (const [source, target] of Object.entries(pairs)) {
-			await this.follow(source, target)
+		let promises = []
+		for (const followInstruction of pairs) {
+			promises.push(this.follow(followInstruction.source, followInstruction.target))
 		}
+		return await Promise.all(promises)
 	}
 
 	async follow(source, target) {
@@ -121,6 +123,9 @@ export class FeedManager {
 	}
 
 	async addOrRemoveActivity(activityData, feed, operation) {
+		if (!feed) {
+			throw Error(`missing feed ${feed}`)
+		}
 		// create the activity
 		let { actor, verb, object, target, time, foreign_id, ...extra } = activityData
 		if (!time) {
@@ -151,8 +156,6 @@ export class FeedManager {
 
 		// fanout to the followers in batches
 		const followers = await Follow.find({ target: feed })
-			.select('source')
-			.lean()
 		const groups = chunkify(followers, 500)
 		let origin = feed
 		for (const group of groups) {
@@ -167,8 +170,12 @@ export class FeedManager {
 	}
 
 	async _fanout(activity, group, origin, operation) {
+		let bulkWrites = []
 		let operations = []
 		for (const follow of group) {
+			if (!follow.source) {
+				throw Error(`missing follow.source ${follow}`)
+			}
 			let document = {
 				feed: follow.source,
 				activity: activity,
@@ -176,10 +183,11 @@ export class FeedManager {
 				time: activity.time,
 				origin,
 			}
-			operations.push({ insertOne: { document } })
+			operations.push(document)
+			bulkWrites.push({ insertOne: { document } })
 		}
 		if (operations.length >= 1) {
-			await ActivityFeed.bulkWrite(operations, { ordered: false })
+			await ActivityFeed.bulkWrite(bulkWrites, { ordered: false })
 			await this.notify(operations)
 		}
 	}

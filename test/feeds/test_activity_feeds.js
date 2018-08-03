@@ -10,7 +10,6 @@ import { FeedManager, DummyFirehose, FayeFirehose } from '../../src/index'
 const FAYE_URL = 'http://localhost:8000/faye'
 
 // TODO:
-// - Faye integration
 // - 6 benchmark scripts
 // - examples for spotify and pinterest style feeds
 // - readme update
