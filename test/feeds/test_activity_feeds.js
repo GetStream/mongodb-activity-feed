@@ -10,11 +10,11 @@ import { FeedManager, DummyFirehose, FayeFirehose } from '../../src/index'
 const FAYE_URL = 'http://localhost:8000/faye'
 
 // TODO:
-// - 6 benchmark scripts
-// - examples for spotify and pinterest style feeds
 // - readme update
+// - examples for spotify and pinterest style feeds
+// - benchmark #3
 // - API
-// - Add Many
+// - Add Many (many activities and/or many feeds)
 // - make mongo connection really configurable (need to research a bit about mongoose and packages)
 
 describe('Test Feed Operations', () => {
