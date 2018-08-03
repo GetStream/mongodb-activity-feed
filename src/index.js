@@ -18,7 +18,14 @@ export class DummyFirehose {
 		this.callback = callback
 	}
 	async notify(byFeed) {
-		await this.callback(byFeed)
+		try {
+			for (const operations of Object.values(byFeed)) {
+				let feed = operations[0].feed
+				await this.callback({ operations, feed })
+			}
+		} catch (e) {
+			console.log('failed to call the callback..', e)
+		}
 	}
 }
 
@@ -29,14 +36,20 @@ export class FayeFirehose {
 	}
 	async notify(byFeed) {
 		let promises = []
-		for (const [feed, operations] of Object.values(byFeed)) {
-			let channel = `/feed-${feed}`
-			console.log(channel)
-			// TODO: Channel seems wrong
+		for (const operations of Object.values(byFeed)) {
+			let feed = operations[0].feed
+			let channel = `/feed-${feed.group.name}--${feed.feedID}`
+
 			let promise = this.fayeClient.publish(channel, { operations, feed })
 			promises.push(promise)
 		}
-		return Promise.all(promises)
+		let results
+		try {
+			results = await Promise.all(promises)
+		} catch (e) {
+			console.log('failed to write to Faye...', e)
+		}
+		return results
 	}
 }
 
@@ -127,13 +140,14 @@ export class FeedManager {
 		})
 
 		// create the activity feed for the primary feed
-		await ActivityFeed.create({
+		let op = await ActivityFeed.create({
 			feed: feed,
 			activity: activity,
 			operation: operation,
 			time: activity.time,
 			origin: feed,
 		})
+		await this.notify([op])
 
 		// fanout to the followers in batches
 		const followers = await Follow.find({ target: feed })
@@ -148,6 +162,7 @@ export class FeedManager {
 				await this._fanout(activity, group, origin, operation)
 			}
 		}
+
 		return activity
 	}
 
@@ -169,14 +184,34 @@ export class FeedManager {
 		}
 	}
 
+	async getFeedGroupMap() {
+		const feedGroups = await FeedGroup.find({})
+		const feedGroupMap = {}
+		for (const group of feedGroups) {
+			feedGroupMap[group.id] = group
+		}
+		return feedGroupMap
+	}
+
 	async notify(operations) {
 		const byFeed = {}
-		if (this.options.firehose) {
+		const feedGroupMap = await this.getFeedGroupMap()
+
+		if (this.options.firehose !== false) {
 			for (const operation of operations) {
-				if (!(operation.feed in byFeed)) {
-					byFeed[operation.feed] = []
+				// make sure we add the full group if its missing
+				if (!operation.feed.group.name) {
+					let groupID = operation.feed.group._id
+					if (!feedGroupMap[groupID]) {
+						throw Error(`cant find feedgroup with id ${groupID}`)
+					}
+					operation.feed.group = feedGroupMap[groupID]
 				}
-				byFeed[operation.feed].push(operation)
+
+				if (!(operation.feed._id in byFeed)) {
+					byFeed[operation.feed._id] = []
+				}
+				byFeed[operation.feed._id].push(operation)
 			}
 			await this.options.firehose.notify(byFeed)
 		}

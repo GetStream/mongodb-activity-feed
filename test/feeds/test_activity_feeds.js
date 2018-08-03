@@ -3,8 +3,11 @@ import redis from '../../src/utils/redis'
 import db from '../../src/utils/db'
 
 import { expect } from 'chai'
+import http from 'http'
+import faye from 'faye'
 
-import { FeedManager } from '../../src/index'
+import { FeedManager, DummyFirehose, FayeFirehose } from '../../src/index'
+const FAYE_URL = 'http://localhost:8000/faye'
 
 // TODO:
 // - Faye integration
@@ -16,7 +19,13 @@ import { FeedManager } from '../../src/index'
 // - make mongo connection really configurable (need to research a bit about mongoose and packages)
 
 describe('Test Feed Operations', () => {
-	let timelineScott, timelineTom, timelineFederico, userJosh, userAlex, userBen
+	let timelineScott,
+		timelineTom,
+		timelineFederico,
+		userJosh,
+		userAlex,
+		userBen,
+		userGeorge
 
 	const options = { bull: false }
 	let fm = new FeedManager(db, redis, options)
@@ -30,6 +39,17 @@ describe('Test Feed Operations', () => {
 		userJosh = await fm.getOrCreateFeed('user', 'josh')
 		userAlex = await fm.getOrCreateFeed('user', 'alex')
 		userBen = await fm.getOrCreateFeed('user', 'ben')
+		userGeorge = await fm.getOrCreateFeed('user', 'george')
+
+		var server = http.createServer(),
+			bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
+
+		bayeux.attach(server)
+		server.listen(8000)
+	})
+
+	beforeEach(async () => {
+		fm.options.firehose = false
 	})
 
 	it('should create a feed', async () => {
@@ -53,6 +73,52 @@ describe('Test Feed Operations', () => {
 		const activity2 = await fm.addActivity(activityData, userJosh)
 		expect(activity2).to.not.be.null
 		expect(activity._id.toString()).to.equal(activity2._id.toString())
+	})
+
+	it('should notify via dummy firehose', done => {
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'Norah Jones',
+			duration: 50,
+			time: '2015-06-15',
+			foreign_id: 'helloworld2',
+		}
+		fm.options.firehose = new DummyFirehose(message => {
+			expect(message.operations[0].activity.foreign_id).to.equal('helloworld2')
+			done()
+		})
+		fm.addActivity(activityData, userGeorge)
+	})
+
+	it('should notify via faye firehose', done => {
+		const fayeFirehose = new FayeFirehose(FAYE_URL)
+		fm.options.firehose = fayeFirehose
+
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'Norah Jones',
+			duration: 50,
+			time: '2015-06-15',
+			foreign_id: 'helloworld',
+		}
+
+		let subscription = fayeFirehose.fayeClient.subscribe(
+			'/feed-user--george',
+			message => {
+				expect(message.operations[0].activity.foreign_id).to.equal('helloworld')
+				done()
+			},
+		)
+		subscription
+			.then(() => {
+				console.log('connected to Faye!')
+				fm.addActivity(activityData, userGeorge)
+			})
+			.catch(() => {
+				console.log('failed to connect to faye')
+			})
 	})
 
 	it('should update an activity', async () => {
