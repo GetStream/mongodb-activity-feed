@@ -316,14 +316,66 @@ export class FeedManager {
 		return selectedActivities
 	}
 
-	async getOrCreateFeed(name, feedID) {
-		const group = await FeedGroup.findOneAndUpdate({ name }, { name }, updateOptions)
-		const feed = await Feed.findOneAndUpdate(
-			{ group: group, feedID },
-			{ group: group, feedID },
-			updateOptions,
-		)
-		return feed
+	async getOrCreateFeed(group, feedID) {
+		const feedMap = await this.getOrCreateFeeds([{ group, feedID }])
+		return feedMap[group][feedID]
+	}
+
+	async getOrCreateFeeds(feedReferences) {
+		// step one, setup all the groups
+		const groupNames = new Set()
+		const groupMap = {}
+		const groupIDMap = {}
+		for (const feedReference of feedReferences) {
+			groupNames.add(feedReference.group)
+		}
+		for (const name of groupNames) {
+			const group = await FeedGroup.findOneAndUpdate(
+				{ name },
+				{ name },
+				updateOptions,
+			)
+			groupMap[name] = group
+			groupIDMap[group._id] = group
+		}
+		// step two, create the feeds
+		let operations = []
+		for (const feedReference of feedReferences) {
+			let document = {
+				group: groupMap[feedReference.group],
+				feedID: feedReference.feedID,
+			}
+			operations.push({
+				updateOne: { filter: document, update: document, upsert: true },
+			})
+		}
+
+		let bulkResponse
+		if (operations.length >= 1) {
+			bulkResponse = await Feed.bulkWrite(operations, { ordered: false })
+		}
+
+		// step three, read the feeds and return the feedmap
+		const feedMap = {}
+		for (const groupName of groupNames) {
+			feedMap[groupName] = {}
+		}
+		// lookup the objects, there doesn't seem to be a better way to do this
+		// bulkWrite doesn't return the ids for things that didn't change...
+		let conditions = []
+		for (const feedReference of feedReferences) {
+			conditions.push({
+				feedID: feedReference.feedID,
+				group: groupMap[feedReference.group]._id,
+			})
+		}
+		const feeds = await Feed.find({ $or: conditions })
+		for (const feed of feeds) {
+			const group = groupIDMap[feed.group]
+			feedMap[group.name][feed.feedID] = feed
+		}
+
+		return feedMap
 	}
 
 	async addActivity(activityData, feed) {

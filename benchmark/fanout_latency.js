@@ -51,7 +51,7 @@ async function run() {
 	await runBenchmark(benchmarkFanout, process.env.REPETITIONS, process.env.CONCURRENCY)
 	setTimeout(() => {
 		t.summarize()
-	}, 7000)
+	}, 12000)
 }
 
 run()
