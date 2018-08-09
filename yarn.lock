@@ -2099,9 +2099,9 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
-getstream@^3.19.0:
-  version "3.19.0"
-  resolved "https://registry.yarnpkg.com/getstream/-/getstream-3.19.0.tgz#4b111d17328cbbb2e9347c0ce55875b4cacd0a3b"
+getstream@^3.20.0:
+  version "3.20.0"
+  resolved "https://registry.yarnpkg.com/getstream/-/getstream-3.20.0.tgz#80460372ee34bfb1db9075021aa07044b989ce0a"
   dependencies:
     Base64 "^1.0.1"
     faye "^1.2.4"
@@ -4773,9 +4773,9 @@ write@^0.2.1:
   dependencies:
     mkdirp "^0.5.1"
 
-"xmlhttp-request@https://github.com/GetStream/xmlhttp-request#2474db1c2829697bcf2788fee49156b62ad8bcfd":
+"xmlhttp-request@git+https://github.com/GetStream/xmlhttp-request.git#2474db1c2829697bcf2788fee49156b62ad8bcfd":
   version "0.4.0"
-  resolved "https://github.com/GetStream/xmlhttp-request#2474db1c2829697bcf2788fee49156b62ad8bcfd"
+  resolved "git+https://github.com/GetStream/xmlhttp-request.git#2474db1c2829697bcf2788fee49156b62ad8bcfd"
 
 xtend@~4.0.1:
   version "4.0.1"

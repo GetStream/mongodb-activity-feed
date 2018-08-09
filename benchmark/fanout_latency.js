@@ -3,7 +3,7 @@ import chunkify from '../src/utils/chunk'
 
 let client = getStreamClient()
 const t = new Timer()
-const followers = 10000
+const followers = 20000
 let targetID = `nick${followers}`
 
 // nick is very popular

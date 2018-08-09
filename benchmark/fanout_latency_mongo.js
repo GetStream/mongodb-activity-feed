@@ -7,7 +7,7 @@ const FAYE_URL = 'http://localhost:8000/faye'
 
 const fm = getFeedManager()
 const t = new Timer()
-const followers = 10000
+const followers = 20000
 let targetID = `nick${followers}`
 
 // setup faye
@@ -29,7 +29,7 @@ async function prepareBenchmark() {
 		follows.push({ source, target })
 	}
 	for (const group of chunkify(follows, 1000)) {
-		await fm.followMany(group)
+		await fm.followMany(group, 0)
 	}
 	// listen to changes in the last feed
 	let feedID = followers - 1

@@ -39,6 +39,7 @@ export class FayeFirehose {
 		for (const operations of Object.values(byFeed)) {
 			let feed = operations[0].feed
 			let channel = `/feed-${feed.group.name}--${feed.feedID}`
+			console.log(channel)
 
 			let promise = this.fayeClient.publish(channel, { operations, feed })
 			promises.push(promise)
@@ -66,44 +67,66 @@ export class FeedManager {
 		this.options = { ...defaultOptions, ...options }
 	}
 
-	async followMany(pairs) {
-		// TODO: not super fast, but doesnt impact our benchmark so fine.
-		let promises = []
+	async followMany(pairs, copyLimit = 300) {
+		// start by using bulk writes to setup the follows
+		let operations = []
 		for (const followInstruction of pairs) {
-			promises.push(this.follow(followInstruction.source, followInstruction.target))
+			let document = {
+				source: followInstruction.source,
+				target: followInstruction.target,
+			}
+			operations.push({
+				updateOne: { filter: document, update: document, upsert: true },
+			})
 		}
-		return await Promise.all(promises)
+		if (operations.length >= 1) {
+			try {
+				await Follow.bulkWrite(operations, {
+					ordered: false,
+				})
+			} catch (e) {
+				// dont fail on records that already exist
+				if (e.code !== 11000) throw e
+			}
+		}
+
+		// group by source
+		if (copyLimit > 0) {
+			let grouped = {}
+			for (const followInstruction of pairs) {
+				if (!(followInstruction.source in grouped)) {
+					grouped[followInstruction.source._id] = []
+				}
+				grouped[followInstruction.source._id].push(followInstruction.target._id)
+			}
+
+			// get the activity references
+			for (const [sourceID, targetIDs] of Object.entries(grouped)) {
+				const lock = await this.redlock.lock(`followLock${sourceID}`, 10 * 1000)
+				const activityReferences = await ActivityFeed.find({
+					feed: { $in: targetIDs },
+				})
+					.limit(copyLimit)
+					.sort('-time')
+				// write these to the source feed in one go
+				const operations = []
+				for (const reference of activityReferences) {
+					let document = reference.toObject()
+					document._id = null
+					document.feed = sourceID
+					operations.push({ insertOne: { document } })
+				}
+				// call the bulk create
+				if (operations.length >= 1) {
+					await ActivityFeed.bulkWrite(operations, { ordered: false })
+				}
+				await lock.unlock()
+			}
+		}
 	}
 
-	async follow(source, target) {
-		const lock = await this.redlock.lock(`followLock${source._id}`, 10 * 1000)
-
-		// create the follow relationship
-		const follow = await Follow.findOneAndUpdate(
-			{ source, target },
-			{ source, target },
-			updateOptions,
-		)
-
-		// get the activity references
-		const activityReferences = await ActivityFeed.find({ feed: target })
-			.limit(300)
-			.sort('-time')
-
-		// write these to the source feed
-		const operations = []
-		for (const reference of activityReferences) {
-			let document = reference.toObject()
-			document._id = null
-			document.feed = source
-			operations.push({ insertOne: { document } })
-		}
-		// call the bulk create
-		if (operations.length >= 1) {
-			await ActivityFeed.bulkWrite(operations, { ordered: false })
-		}
-		await lock.unlock()
-		return follow
+	async follow(source, target, copyLimit = 300) {
+		await this.followMany([{ source, target }], copyLimit)
 	}
 
 	async unfollow(source, target) {
@@ -227,7 +250,7 @@ export class FeedManager {
 
 	async readFeed(feed, offset, limit, rankingMethod, aggregationMethod) {
 		// read the feed sorted by the activity time
-		const searchDepth = 3000
+		const searchDepth = 1000
 		const operations = await ActivityFeed.find({ feed })
 			.sort({ time: -1, operationTime: -1 })
 			.limit(searchDepth)
