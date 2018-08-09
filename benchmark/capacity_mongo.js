@@ -13,6 +13,7 @@ import chunkify from '../src/utils/chunk'
 import { FayeFirehose } from '../src/index'
 import http from 'http'
 import faye from 'faye'
+import { dropDBs } from '../test/utils'
 const FAYE_URL = 'http://localhost:8000/faye'
 
 const fm = getFeedManager()
@@ -28,15 +29,17 @@ server.listen(8000)
 const fayeFirehose = new FayeFirehose(FAYE_URL)
 fm.options.firehose = fayeFirehose
 
+const maxFollowers = 1000
+
 async function prepareBenchmark() {
 	let steps = [
-		{ start: 0, stop: 50, followers: 5 },
-		{ start: 50, stop: 60, followers: 10 },
-		{ start: 60, stop: 80, followers: 10 },
-		{ start: 80, stop: 95, followers: 20 },
-		{ start: 95, stop: 100, followers: 100 },
+		{ start: 0, stop: 50, followers: maxFollowers / 10 ** 4 },
+		{ start: 50, stop: 60, followers: maxFollowers / 10 ** 3 },
+		{ start: 60, stop: 80, followers: maxFollowers / 10 ** 2 },
+		{ start: 80, stop: 95, followers: maxFollowers / 10 },
+		{ start: 95, stop: 100, followers: maxFollowers },
 	]
-	console.log('1 make a list of the feeds we need')
+	console.log('steps', steps)
 
 	let feedReferences = []
 	for (const step of steps) {
@@ -73,7 +76,17 @@ async function prepareBenchmark() {
 
 	let userFeeds = feedMap['user']
 
-	console.log('ready for benchmark')
+	let last = maxFollowers - 1
+
+	const connected = await fayeFirehose.fayeClient.subscribe(
+		`/feed-timeline--99-${last}`,
+		message => {
+			let foreignID = message.operations[0].activity.foreign_id
+			t.stop('fanout and realtime', foreignID)
+		},
+	)
+
+	console.log('ready for benchmark', connected)
 
 	return userFeeds
 }
@@ -86,6 +99,8 @@ async function benchmarkCapacity(n, userFeeds) {
 		verb: 'tweet',
 		object: 'tweet:1',
 	}
+	console.log('adding activity', `capacity:${n}`)
+	t.start('fanout and realtime', `capacity:${n}`)
 	for (let feed of Object.values(userFeeds)) {
 		promises.push(fm.addActivity(activity, feed))
 	}
@@ -93,16 +108,21 @@ async function benchmarkCapacity(n, userFeeds) {
 }
 
 async function run() {
+	await dropDBs()
 	const userFeeds = await prepareBenchmark()
 	async function benchmark(n) {
 		await benchmarkCapacity(n, userFeeds)
 	}
+
 	console.log(
 		'starting benchmark now',
 		process.env.REPETITIONS,
 		process.env.CONCURRENCY,
 	)
 	await runBenchmark(benchmark, process.env.REPETITIONS, process.env.CONCURRENCY)
+	setTimeout(() => {
+		t.summarize()
+	}, 7000)
 }
 
 run()

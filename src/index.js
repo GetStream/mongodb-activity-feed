@@ -39,8 +39,6 @@ export class FayeFirehose {
 		for (const operations of Object.values(byFeed)) {
 			let feed = operations[0].feed
 			let channel = `/feed-${feed.group.name}--${feed.feedID}`
-			console.log(channel)
-
 			let promise = this.fayeClient.publish(channel, { operations, feed })
 			promises.push(promise)
 		}
@@ -178,15 +176,19 @@ export class FeedManager {
 		await this.notify([op])
 
 		// fanout to the followers in batches
-		const followers = await Follow.find({ target: feed })
+		const followers = await Follow.find({ target: feed }).sort({ target: -1 })
 		const groups = chunkify(followers, 500)
 		let origin = feed
+		let promises = []
 		for (const group of groups) {
 			if (this.options.bull) {
 				this.queue.add({ activity, group, origin, operation })
 			} else {
-				await this._fanout(activity, group, origin, operation)
+				promises.push(this._fanout(activity, group, origin, operation))
 			}
+		}
+		if (promises.length > 0) {
+			await Promise.all(promises)
 		}
 
 		return activity
@@ -352,12 +354,10 @@ export class FeedManager {
 				updateOne: { filter: document, update: document, upsert: true },
 			})
 		}
-		console.log('operations', operations.length)
 		let bulkResponse
 		if (operations.length >= 1) {
 			bulkResponse = await Feed.bulkWrite(operations, { ordered: false })
 		}
-		console.log('finished bulkwrite')
 
 		// step three, read the feeds and return the feedmap
 		const feedMap = {}
@@ -376,7 +376,6 @@ export class FeedManager {
 		const feeds = await Feed.find({ $or: conditions })
 		for (const feed of feeds) {
 			const group = groupIDMap[feed.group]
-			console.log(group.name, feed.feedID)
 			feedMap[group.name][feed.feedID] = feed
 		}
 
