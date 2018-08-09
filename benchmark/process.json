@@ -1,0 +1,12 @@
+{
+	"apps": [
+		{
+			"interpreter": "babel-node",
+			"name": "worker",
+			"cwd": "./",
+			"script": "worker.js",
+			"instances": 4,
+			"watch": true
+		}
+	]
+}

@@ -12,21 +12,26 @@ import stats from 'stats-lite'
 
 export function timer() {}
 
-export function getFeedManager() {
-	const redis = new Redis('redis://localhost:6379/9')
-	const mongo = mongoose.connect(
-		'mongodb://localhost:27017/benchmark',
-		{
-			autoIndex: true,
-			reconnectTries: Number.MAX_VALUE,
-			reconnectInterval: 500,
-			poolSize: 50,
-			bufferMaxEntries: 0,
-			keepAlive: 120,
-		},
-	)
+let fm = null
 
-	const fm = new FeedManager(mongo, redis)
+export function getFeedManager() {
+	if (fm === null) {
+		const redis = new Redis('redis://localhost:6379/9')
+		const mongo = mongoose.connect(
+			'mongodb://localhost:27017/benchmark',
+			{
+				autoIndex: true,
+				reconnectTries: Number.MAX_VALUE,
+				reconnectInterval: 500,
+				poolSize: 50,
+				bufferMaxEntries: 0,
+				keepAlive: 120,
+			},
+		)
+
+		fm = new FeedManager(mongo, redis)
+	}
+
 	return fm
 }
 

@@ -17,6 +17,7 @@ import { dropDBs } from '../test/utils'
 const FAYE_URL = 'http://localhost:8000/faye'
 
 const fm = getFeedManager()
+fm.options.bull = true
 const t = new Timer()
 
 // setup faye
