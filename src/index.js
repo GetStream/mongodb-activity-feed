@@ -323,13 +323,16 @@ export class FeedManager {
 
 	async getOrCreateFeeds(feedReferences) {
 		// step one, setup all the groups
-		const groupNames = new Set()
+		const feedsByGroup = []
 		const groupMap = {}
 		const groupIDMap = {}
 		for (const feedReference of feedReferences) {
-			groupNames.add(feedReference.group)
+			if (!(feedReference.group in feedsByGroup)) {
+				feedsByGroup[feedReference.group] = []
+			}
+			feedsByGroup[feedReference.group].push(feedReference.feedID)
 		}
-		for (const name of groupNames) {
+		for (const name of Object.keys(feedsByGroup)) {
 			const group = await FeedGroup.findOneAndUpdate(
 				{ name },
 				{ name },
@@ -349,29 +352,31 @@ export class FeedManager {
 				updateOne: { filter: document, update: document, upsert: true },
 			})
 		}
-
+		console.log('operations', operations.length)
 		let bulkResponse
 		if (operations.length >= 1) {
 			bulkResponse = await Feed.bulkWrite(operations, { ordered: false })
 		}
+		console.log('finished bulkwrite')
 
 		// step three, read the feeds and return the feedmap
 		const feedMap = {}
-		for (const groupName of groupNames) {
+		for (const groupName of Object.keys(feedsByGroup)) {
 			feedMap[groupName] = {}
 		}
 		// lookup the objects, there doesn't seem to be a better way to do this
 		// bulkWrite doesn't return the ids for things that didn't change...
 		let conditions = []
-		for (const feedReference of feedReferences) {
+		for (const [groupName, feedIDs] of Object.entries(feedsByGroup)) {
 			conditions.push({
-				feedID: feedReference.feedID,
-				group: groupMap[feedReference.group]._id,
+				feedID: { $in: feedIDs },
+				group: groupMap[groupName]._id,
 			})
 		}
 		const feeds = await Feed.find({ $or: conditions })
 		for (const feed of feeds) {
 			const group = groupIDMap[feed.group]
+			console.log(group.name, feed.feedID)
 			feedMap[group.name][feed.feedID] = feed
 		}
 

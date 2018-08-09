@@ -31,34 +31,47 @@ fm.options.firehose = fayeFirehose
 async function prepareBenchmark() {
 	let steps = [
 		{ start: 0, stop: 50, followers: 5 },
-		{ start: 50, stop: 60, followers: 100 },
-		{ start: 60, stop: 70, followers: 1000 },
-		{ start: 70, stop: 80, followers: 2000 },
-		{ start: 80, stop: 100, followers: 10000 },
+		{ start: 50, stop: 60, followers: 10 },
+		{ start: 60, stop: 80, followers: 10 },
+		{ start: 80, stop: 95, followers: 20 },
+		{ start: 95, stop: 100, followers: 100 },
 	]
-	console.log('1 creating feeds')
+	console.log('1 make a list of the feeds we need')
+
+	let feedReferences = []
+	for (const step of steps) {
+		for (let x = step.start; x < step.stop; x++) {
+			let target = { group: 'user', feedID: x }
+			feedReferences.push(target)
+			for (let i = 0; i < step.followers; i++) {
+				let source = { group: 'timeline', feedID: `${x}-${i}` }
+				feedReferences.push(source)
+			}
+		}
+	}
+	console.log('2 creating the feeds', feedReferences.length)
+	let feedMap = await fm.getOrCreateFeeds(feedReferences)
+
+	console.log('creating the follows')
+
 	let follows = []
 	for (const step of steps) {
 		for (let x = step.start; x < step.stop; x++) {
-			let target = await fm.getOrCreateFeed('user', x)
+			let target = feedMap['user'][x]
 			for (let i = 0; i < step.followers; i++) {
-				let source = await fm.getOrCreateFeed('timeline', `${x}-${i}`)
+				let source = feedMap['timeline'][`${x}-${i}`]
 				follows.push({ source, target })
 			}
 		}
 	}
-	console.log('2 creating the follows')
+
 	// actually do the follows
 	for (const group of chunkify(follows, 1000)) {
 		await fm.followMany(group, 0)
 	}
 	console.log('3 creating the user feeds')
 
-	let userFeeds = {}
-	for (let x = 0; x < 100; x++) {
-		let feed = await fm.getOrCreateFeed('user', x)
-		userFeeds[x] = feed
-	}
+	let userFeeds = feedMap['user']
 
 	console.log('ready for benchmark')
 
