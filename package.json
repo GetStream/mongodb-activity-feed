@@ -7,6 +7,17 @@
 	"repository": "https://github.com/GetStream/mongodb-activity-feed-example",
 	"bugs": "https://github.com/GetStream/mongodb-activity-feed-example/issues",
 	"author": "Thierry Schellenbach",
+	"keywords": [
+		"activity feed",
+		"mongodb",
+		"news feed",
+		"notification feed",
+		"fanout",
+		"social",
+		"event",
+		"twitter",
+		"timeline"
+	],
 	"license": "BSD",
 	"private": false,
 	"scripts": {
