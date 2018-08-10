@@ -1,0 +1,10 @@
+{
+	"apps": [
+		{
+			"interpreter": "babel-node",
+			"name": "fanout",
+			"cwd": "./",
+			"script": "worker.js"
+		}
+	]
+}

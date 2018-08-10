@@ -1,24 +1,10 @@
 import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
-import { FayeFirehose } from '../src/index'
-import http from 'http'
-import faye from 'faye'
-const FAYE_URL = 'http://localhost:8000/faye'
-
+i
 const fm = getFeedManager()
 const t = new Timer()
 const followers = 20000
 let targetID = `nick${followers}`
-
-// setup faye
-var server = http.createServer(),
-	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
-
-bayeux.attach(server)
-server.listen(8000)
-
-const fayeFirehose = new FayeFirehose(FAYE_URL)
-fm.options.firehose = fayeFirehose
 
 async function prepareBenchmark() {
 	// setup the follow relationships
@@ -33,7 +19,7 @@ async function prepareBenchmark() {
 	}
 	// listen to changes in the last feed
 	let feedID = followers - 1
-	const connected = await fayeFirehose.fayeClient.subscribe(
+	const connected = await fm.options.firehose.fayeClient.subscribe(
 		`/feed-timeline--${feedID}`,
 		message => {
 			let foreignID = message.operations[0].activity.foreign_id

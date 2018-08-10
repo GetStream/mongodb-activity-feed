@@ -182,9 +182,13 @@ export class FeedManager {
 		let promises = []
 		for (const group of groups) {
 			if (this.options.bull) {
-				this.queue.add({ activity, group, origin, operation })
+				const promise = this.queue.add({
+					args: [activity, group, origin, operation],
+				})
+				promises.push(promise)
 			} else {
-				promises.push(this._fanout(activity, group, origin, operation))
+				const promise = this._fanout(activity, group, origin, operation)
+				promises.push(promise)
 			}
 		}
 		if (promises.length > 0) {
@@ -234,7 +238,7 @@ export class FeedManager {
 			for (const operation of operations) {
 				// make sure we add the full group if its missing
 				if (!operation.feed.group.name) {
-					let groupID = operation.feed.group._id
+					let groupID = operation.feed.group._id || operation.feed.group
 					if (!feedGroupMap[groupID]) {
 						throw Error(`cant find feedgroup with id ${groupID}`)
 					}

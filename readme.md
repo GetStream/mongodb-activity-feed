@@ -7,63 +7,210 @@ https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/
 
 It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to reduce the need for locks.
 
-### Init
+## TODO:
+
+-   Benchmark 3, Stream edition
+-   ReRun benchmarks, update blogpost
+
+### Install
+
+```
+yarn add mongodb-activity-feed
+```
+
+### MongoDB & Redis Activity Feed
+
+```
+brew install redis mongodb
+brew services start redis
+brew services start mongodb
+```
+
+### Initialization
+
+Here's a very short example
 
 ```
 import {FeedManager} from 'mongodb-activity-feed'
-const fm = new FeedManager(mongoConnection, redisConnection)
-fm.feed('user', '123')
+const fm = new FeedManager(mongoConnection, redisConnection, {bull: false, firehose: false})
 ```
 
-## News Feed Mongo
+And a bit longer one:
 
-## Notification Feed Node
+```
+import {FeedManager, FayeFirehose} from 'mongodb-activity-feed'
+import Redis from 'ioredis'
+import mongoose from 'mongoose'
 
-## Timeline
+const redis = new Redis('redis://localhost:6379/9')
+const mongo = mongoose.connect(
+    'mongodb://localhost:27017/mydb',
+    {
+        autoIndex: true,
+        reconnectTries: Number.MAX_VALUE,
+        reconnectInterval: 500,
+        poolSize: 50,
+        bufferMaxEntries: 0,
+        keepAlive: 120,
+    },
+)
+const fayeFirehose = new FayeFirehose('http://localhost:8000/faye')
+
+const fm = new FeedManager(mongo, redis, {bull: true, firehose: fayeFirehose})
+```
+
+The **bull** option determines if activity fanout is done over a bull queue or synchronous.
+The **firehose** option allows you to listen to feed changes in realtime using Faye.
+
+## Timeline MongoDB
+
+Here's a quick tutorial on a simple timeline with mongodb-activity-feed
+
+```
+const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
+const userNick = await fm.getOrCreateFeed('user', 'nick')
+await fm.follow(timelineScott, userNick)
+const activity = {
+    actor: 'user:nick',
+    verb: 'watch',
+    object: 'video:123',
+}
+await fm.addActivity(activity, userNick)
+const activities = await fm.readFeed(timelineScott, 0, 10)
+```
+
+## Notification System MongoDB
+
+Here's a quick tutorial on a simple timeline with mongodb-activity-feed
+
+```
+const notificationBen = await fm.getOrCreateFeed('notification', 'ben')
+// lets say you want to notify Ben that Nick likes his post
+const activity = {
+    actor: 'user:nick',
+    verb: 'like',
+    object: 'post:123',
+}
+await fm.addActivity(activity, notificationBen)
+// group together all activities with the same verb and actor
+const aggregationMethod = activity => {
+    return activity.verb + '__' + activity.actor
+}
+const groups = await fm.readFeed(notificationBen, 0, 3, null, aggregationMethod)
+```
 
 ### Adding an activity
 
 Add an activity like this.
 
 ```
+const activity = {
+    actor: 'user:nick',
+    verb: 'like',
+    object: 'post:123',
+}
 fm.addActivity(activity, feed)
 ```
 
-```
-fm.removeActivity(activityID)
-```
+### Removing an activity
+
+Remove an activity:
 
 ```
-fm.removeActivityFromFeed(activityID, feed)
+const activity = {
+    actor: 'user:nick',
+    verb: 'like',
+    object: 'post:123',
+}
+fm.removeActivity(activity, feed)
 ```
 
 ### Follow a feed
 
 ```
-fm.follow(a, b)
-fm.unfollow(a, b)
+// follow with a copy limit of 10
+const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
+const userNick = await fm.getOrCreateFeed('user', 'nick')
+await fm.follow(timelineScott, userNick, 10)
 ```
 
-### Read a feed from MongoDB
+### Follow Many Feeds
 
 ```
-fm.readFeed('user', '123', options)
+// follow with a copy limit of 10
+const source = await fm.getOrCreateFeed('timeline', 'scott')
+const target = await fm.getOrCreateFeed('user', 'nick')
+const target2 = await fm.getOrCreateFeed('user', 'john')
+await fm.followMany([{source, target}, {source, target2}], 10)
 ```
+
+### Unfollow a feed
+
+```
+const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
+const userNick = await fm.getOrCreateFeed('user', 'nick')
+await fm.unfollow(timelineScott, userNick)
+```
+
+### Create Many Feeds at Once
+
+```
+const feedReferences = [{group: 'timeline', feedID: 'scott'}, {group: 'notification', feedID: 'ben'}]
+const feedMap = await fm.getOrCreateFeeds(feedReferences)
+```
+
+## Reading a feed from MongoDB
+
+### Basic Read
+
+```
+const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
+await fm.readFeed(notificationAlex, 0, 10)
+```
+
+### Ranked Feed
+
+```
+const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
+// asumes that you have a property on your activity called "popularity"
+const rankingMethod = (a, b) => {
+    return b.popularity - a.popularity
+}
+const activities = await fm.readFeed(notificationAlex, 0, 3, rankingMethod)
+```
+
+### Aggregated Feed
+
+```
+const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
+// group together all activities with the same verb and actor
+const aggregationMethod = activity => {
+    return activity.verb + '__' + activity.actor
+}
+await fm.readFeed(notificationAlex, 0, 10, null, aggregationMethod)
+```
+
+Activities are unique on the combination of `foreign_id` and `time`.
+If you don't specify foreign id the full activity object will be used.
 
 ## Pros/Cons
 
-The cost/performance of a MongoDB based activity feed is substantially worse compared to Stream (https://getstream.io/).
-Unless you need to run your feeds on-prem you should not use this in prod.
+MongoDB is a nice general purpose database. For building activity feeds it's not a great fit though.
+Cassandra and Redis will in most scenarios outperform a MongoDB based solution.
+
+Dedicated activity feed databases like [Stream](https://getstream.io/) are typically 10x more performant and easier to use.
+
+So in most cases you shouldn't run your activity feed on MongoDB.
+It only makes sense if your traffic is relatively small and you're not able to use cloud hosted APIs.
+Unless you really need to run your feeds on-prem you should not use this in prod.
+
+If you do need to run on-prem I'd recommend the open source [Stream-Framework](https://github.com/tschellenbach/stream-framework)
 
 ## Contributing
 
+Pull requests are welcome but be sure to improve test coverage.
+
 ### Running tests
-
-```
-NODE_ENV=test node_modules/mocha/bin/_mocha --timeout 15000 --require test-entry.js "test/**/*.js"
-```
-
-Or if you're lazy
 
 ```
 yarn test
@@ -73,4 +220,10 @@ yarn test
 
 ```
 yarn lint
+```
+
+### Prettier
+
+```
+yarn prettier
 ```

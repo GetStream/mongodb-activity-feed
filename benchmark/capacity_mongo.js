@@ -8,29 +8,15 @@ Next, we’ll scale up the number of new activities we’re adding per minute ti
 
 */
 
-import { getFeedManager, Timer, runBenchmark } from './utils'
+import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
 import chunkify from '../src/utils/chunk'
-import { FayeFirehose } from '../src/index'
-import http from 'http'
-import faye from 'faye'
-import { dropDBs } from '../test/utils'
-const FAYE_URL = 'http://localhost:8000/faye'
 
 const fm = getFeedManager()
 fm.options.bull = true
+startFaye()
 const t = new Timer()
 
-// setup faye
-var server = http.createServer(),
-	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
-
-bayeux.attach(server)
-server.listen(8000)
-
-const fayeFirehose = new FayeFirehose(FAYE_URL)
-fm.options.firehose = fayeFirehose
-
-const maxFollowers = 1000
+const maxFollowers = 10000
 
 async function prepareBenchmark() {
 	let steps = [
@@ -79,7 +65,7 @@ async function prepareBenchmark() {
 
 	let last = maxFollowers - 1
 
-	const connected = await fayeFirehose.fayeClient.subscribe(
+	const connected = await fm.options.firehose.fayeClient.subscribe(
 		`/feed-timeline--99-${last}`,
 		message => {
 			let foreignID = message.operations[0].activity.foreign_id
@@ -109,7 +95,6 @@ async function benchmarkCapacity(n, userFeeds) {
 }
 
 async function run() {
-	await dropDBs()
 	const userFeeds = await prepareBenchmark()
 	async function benchmark(n) {
 		await benchmarkCapacity(n, userFeeds)
@@ -121,9 +106,10 @@ async function run() {
 		process.env.CONCURRENCY,
 	)
 	await runBenchmark(benchmark, process.env.REPETITIONS, process.env.CONCURRENCY)
-	setTimeout(() => {
+	setInterval(() => {
+		console.log('summarize')
 		t.summarize()
-	}, 7000)
+	}, 5000)
 }
 
 run()

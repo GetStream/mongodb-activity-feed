@@ -5,14 +5,28 @@ https://www.npmjs.com/package/time-span
 https://www.npmjs.com/package/benchmark
 */
 import stream from 'getstream'
-import { FeedManager } from '../src/index.js'
+import { FeedManager, FayeFirehose } from '../src/index.js'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 import stats from 'stats-lite'
+import http from 'http'
+import faye from 'faye'
+const FAYE_URL = 'http://localhost:8000/faye'
 
 export function timer() {}
 
+// setup faye
+var server = http.createServer(),
+	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
+
+const fayeFirehose = new FayeFirehose(FAYE_URL)
+
 let fm = null
+
+export function startFaye() {
+	bayeux.attach(server)
+	server.listen(8000)
+}
 
 export function getFeedManager() {
 	if (fm === null) {
@@ -29,7 +43,7 @@ export function getFeedManager() {
 			},
 		)
 
-		fm = new FeedManager(mongo, redis)
+		fm = new FeedManager(mongo, redis, { firehose: fayeFirehose })
 	}
 
 	return fm
