@@ -14,13 +14,13 @@ It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
 
 ### Install
 
-```node
+```bash
 yarn add mongodb-activity-feed
 ```
 
 ### MongoDB & Redis Activity Feed
 
-```javascript
+```bash
 brew install redis mongodb
 brew services start redis
 brew services start mongodb
@@ -30,7 +30,7 @@ brew services start mongodb
 
 Here's a very short example
 
-```javascript
+```node
 import { FeedManager } from 'mongodb-activity-feed'
 const fm = new FeedManager(mongoConnection, redisConnection, {
 	bull: false,
@@ -69,7 +69,7 @@ The **firehose** option allows you to listen to feed changes in realtime using F
 
 Here's a quick tutorial on a simple timeline with mongodb-activity-feed
 
-```
+```node
 const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
 const userNick = await fm.getOrCreateFeed('user', 'nick')
 await fm.follow(timelineScott, userNick)
@@ -86,7 +86,7 @@ const activities = await fm.readFeed(timelineScott, 0, 10)
 
 Here's a quick tutorial on a simple timeline with mongodb-activity-feed
 
-```
+```node
 const notificationBen = await fm.getOrCreateFeed('notification', 'ben')
 // lets say you want to notify Ben that Nick likes his post
 const activity = {
@@ -106,7 +106,7 @@ const groups = await fm.readFeed(notificationBen, 0, 3, null, aggregationMethod)
 
 Add an activity like this.
 
-```
+```node
 const activity = {
     actor: 'user:nick',
     verb: 'like',
@@ -119,7 +119,7 @@ fm.addActivity(activity, feed)
 
 Remove an activity:
 
-```
+```node
 const activity = {
     actor: 'user:nick',
     verb: 'like',
@@ -130,7 +130,7 @@ fm.removeActivity(activity, feed)
 
 ### Follow a feed
 
-```
+```node
 // follow with a copy limit of 10
 const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
 const userNick = await fm.getOrCreateFeed('user', 'nick')
@@ -139,7 +139,7 @@ await fm.follow(timelineScott, userNick, 10)
 
 ### Follow Many Feeds
 
-```
+```node
 // follow with a copy limit of 10
 const source = await fm.getOrCreateFeed('timeline', 'scott')
 const target = await fm.getOrCreateFeed('user', 'nick')
@@ -149,7 +149,7 @@ await fm.followMany([{source, target}, {source, target2}], 10)
 
 ### Unfollow a feed
 
-```
+```node
 const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
 const userNick = await fm.getOrCreateFeed('user', 'nick')
 await fm.unfollow(timelineScott, userNick)
@@ -157,7 +157,7 @@ await fm.unfollow(timelineScott, userNick)
 
 ### Create Many Feeds at Once
 
-```
+```node
 const feedReferences = [{group: 'timeline', feedID: 'scott'}, {group: 'notification', feedID: 'ben'}]
 const feedMap = await fm.getOrCreateFeeds(feedReferences)
 ```
@@ -166,14 +166,14 @@ const feedMap = await fm.getOrCreateFeeds(feedReferences)
 
 ### Basic Read
 
-```
+```node
 const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
 await fm.readFeed(notificationAlex, 0, 10)
 ```
 
 ### Ranked Feed
 
-```
+```node
 const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
 // asumes that you have a property on your activity called "popularity"
 const rankingMethod = (a, b) => {
@@ -184,7 +184,7 @@ const activities = await fm.readFeed(notificationAlex, 0, 3, rankingMethod)
 
 ### Aggregated Feed
 
-```
+```node
 const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
 // group together all activities with the same verb and actor
 const aggregationMethod = activity => {
@@ -215,18 +215,18 @@ Pull requests are welcome but be sure to improve test coverage.
 
 ### Running tests
 
-```
+```bash
 yarn test
 ```
 
 ### Linting
 
-```
+```bash
 yarn lint
 ```
 
 ### Prettier
 
-```
+```bash
 yarn prettier
 ```
