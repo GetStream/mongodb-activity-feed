@@ -13,8 +13,6 @@ import http from 'http'
 import faye from 'faye'
 const FAYE_URL = 'http://localhost:8000/faye'
 
-export function timer() {}
-
 // setup faye
 var server = http.createServer(),
 	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 5 })
@@ -24,6 +22,7 @@ const fayeFirehose = new FayeFirehose(FAYE_URL)
 let fm = null
 
 export function startFaye() {
+	console.log('FAYE_URL', FAYE_URL)
 	bayeux.attach(server)
 	server.listen(8000)
 }

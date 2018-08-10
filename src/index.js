@@ -32,7 +32,12 @@ export class DummyFirehose {
 // faye realtime notifications
 export class FayeFirehose {
 	constructor(fayeURL) {
-		this.fayeClient = new faye.Client(fayeURL)
+		if (fayeURL.connection) {
+			this.fayeClient = fayeURL
+		} else {
+			console.log('fayeURL', fayeURL)
+			this.fayeClient = new faye.Client(fayeURL, { timeout: 5 })
+		}
 	}
 	async notify(byFeed) {
 		console.log('notifya')
