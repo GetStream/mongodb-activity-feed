@@ -30,14 +30,17 @@ brew services start mongodb
 
 Here's a very short example
 
-```
-import {FeedManager} from 'mongodb-activity-feed'
-const fm = new FeedManager(mongoConnection, redisConnection, {bull: false, firehose: false})
+```javascript
+import { FeedManager } from 'mongodb-activity-feed'
+const fm = new FeedManager(mongoConnection, redisConnection, {
+	bull: false,
+	firehose: false,
+})
 ```
 
 And a bit longer one:
 
-```
+```node
 import {FeedManager, FayeFirehose} from 'mongodb-activity-feed'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
