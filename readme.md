@@ -14,13 +14,13 @@ It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
 
 ### Install
 
-```
+```node
 yarn add mongodb-activity-feed
 ```
 
 ### MongoDB & Redis Activity Feed
 
-```
+```javascript
 brew install redis mongodb
 brew services start redis
 brew services start mongodb
