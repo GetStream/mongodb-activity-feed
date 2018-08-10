@@ -1,9 +1,10 @@
-import { getFeedManager, Timer, runBenchmark } from './utils'
+import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
 
 let activities = []
 
 const fm = getFeedManager()
 const t = new Timer()
+startFaye()
 
 for (let i = 0; i < 3000; i++) {
 	let activity = {
@@ -18,9 +19,12 @@ for (let i = 0; i < 3000; i++) {
 
 async function prepareBenchmark() {
 	let feed = await fm.getOrCreateFeed('timeline_aggregated', 'test')
+	console.log('inserting activities into feed', feed, activities.length)
+	let promises = []
 	for (const activity of activities) {
-		await fm.addActivity(activity, feed)
+		promises.push(fm.addActivity(activity, feed))
 	}
+	await Promise.all(promises)
 	console.log('starting benchmark')
 }
 

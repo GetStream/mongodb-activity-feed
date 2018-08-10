@@ -1,19 +1,35 @@
-import { getFeedManager, Timer, runBenchmark } from './utils'
+import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
 import chunkify from '../src/utils/chunk'
-i
+
 const fm = getFeedManager()
+startFaye()
 const t = new Timer()
 const followers = 20000
 let targetID = `nick${followers}`
 
+let feedMap
+let targetFeed
+
 async function prepareBenchmark() {
+	console.log('prepping benchmark')
 	// setup the follow relationships
 	const follows = []
+	const target = await fm.getOrCreateFeed('user', targetID)
+	targetFeed = target
+	const feedReferences = []
 	for (let i = 0; i < followers; i++) {
-		const source = await fm.getOrCreateFeed('timeline', i)
-		const target = await fm.getOrCreateFeed('user', targetID)
+		feedReferences.push({ group: 'timeline', feedID: i })
+	}
+	// batch create since we want this to be fast
+	feedMap = await fm.getOrCreateFeeds(feedReferences)
+	for (let i = 0; i < followers; i++) {
+		const source = feedMap['timeline'][i]
+		if (!source) {
+			throw new Error('whoops')
+		}
 		follows.push({ source, target })
 	}
+
 	for (const group of chunkify(follows, 1000)) {
 		await fm.followMany(group, 0)
 	}
@@ -30,15 +46,17 @@ async function prepareBenchmark() {
 }
 
 async function benchmarkFanout(n) {
+	console.log(1, targetFeed)
 	let activity = {
 		foreign_id: `test:${n}`,
 		actor: 'user:1',
 		verb: 'tweet',
 		object: 'tweet:1',
 	}
-	let feed = await fm.getOrCreateFeed('user', targetID)
+
 	t.start('fanout and realtime', `test:${n}`)
-	let response = await fm.addActivity(activity, feed)
+	let response = await fm.addActivity(activity, targetFeed)
+	console.log('2')
 
 	return response
 }

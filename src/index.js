@@ -35,6 +35,7 @@ export class FayeFirehose {
 		this.fayeClient = new faye.Client(fayeURL)
 	}
 	async notify(byFeed) {
+		console.log('notifya')
 		let promises = []
 		for (const operations of Object.values(byFeed)) {
 			let feed = operations[0].feed
@@ -43,11 +44,15 @@ export class FayeFirehose {
 			promises.push(promise)
 		}
 		let results
-		try {
-			results = await Promise.all(promises)
-		} catch (e) {
-			console.log('failed to write to Faye...', e)
+		if (promises.length > 0) {
+			try {
+				results = await Promise.all(promises)
+			} catch (e) {
+				console.log('failed to write to Faye...', e)
+			}
 		}
+		console.log('end notify')
+
 		return results
 	}
 }
@@ -387,11 +392,19 @@ export class FeedManager {
 	}
 
 	async addActivity(activityData, feed) {
-		return this.addOrRemoveActivity(activityData, feed, OPERATIONS.ADD_OPERATION)
+		return await this.addOrRemoveActivity(
+			activityData,
+			feed,
+			OPERATIONS.ADD_OPERATION,
+		)
 	}
 
 	async removeActivity(activityData, feed) {
-		return this.addOrRemoveActivity(activityData, feed, OPERATIONS.REMOVE_OPERATION)
+		return await this.addOrRemoveActivity(
+			activityData,
+			feed,
+			OPERATIONS.REMOVE_OPERATION,
+		)
 	}
 
 	_createLock() {

@@ -17,7 +17,7 @@ export function timer() {}
 
 // setup faye
 var server = http.createServer(),
-	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
+	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 5 })
 
 const fayeFirehose = new FayeFirehose(FAYE_URL)
 
@@ -43,7 +43,7 @@ export function getFeedManager() {
 			},
 		)
 
-		fm = new FeedManager(mongo, redis, { firehose: fayeFirehose })
+		fm = new FeedManager(mongo, redis, { firehose: fayeFirehose, bull: false })
 	}
 
 	return fm
