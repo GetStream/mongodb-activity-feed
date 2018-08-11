@@ -6,8 +6,14 @@ import { expect } from 'chai'
 import http from 'http'
 import faye from 'faye'
 
-import { FeedManager, DummyFirehose, FayeFirehose } from '../../src/index'
+import {
+	FeedManager,
+	DummyFirehose,
+	FayeFirehose,
+	SocketIOFirehose,
+} from '../../src/index'
 const FAYE_URL = 'http://localhost:8000/faye'
+const SOCKET_URL = 'http://localhost:3000'
 
 describe('Test Feed Operations', () => {
 	let timelineScott,
@@ -35,12 +41,45 @@ describe('Test Feed Operations', () => {
 		var server = http.createServer(),
 			bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 45 })
 
+		const io = require('socket.io')(3000)
+
+		io.on('connection', function(socket) {
+			console.log('someone connected, yee')
+		})
+
 		bayeux.attach(server)
 		server.listen(8000)
 	})
 
 	beforeEach(async () => {
 		fm.options.firehose = false
+	})
+
+	it.only('check socket firehose', done => {
+		console.log('check socket firehose')
+		const firehose = new SocketIOFirehose(SOCKET_URL)
+		const firehose2 = new SocketIOFirehose(SOCKET_URL)
+
+		fm.options.firehose = firehose
+
+		// wait for the connection to be made to the server
+		firehose.client.on('connect', () => {
+			console.log('connection made')
+			console.log('emit')
+			// subscribe to everything named channel
+			firehose.client.on('channel', function(message, fn) {
+				console.log('received', message)
+				fn('woot' + name)
+				done()
+			})
+			// emit an event with the message hi
+			firehose.client.emit('channel', { message: 'hi' }, function(data) {
+				console.log(data) // data will be 'woot'
+			})
+			firehose2.client.emit('channel', { message: 'hi' }, function(data) {
+				console.log(data) // data will be 'woot'
+			})
+		})
 	})
 
 	it('should create a feed', async () => {
@@ -80,6 +119,43 @@ describe('Test Feed Operations', () => {
 			done()
 		})
 		fm.addActivity(activityData, userGeorge)
+	})
+
+	it('should notify via socket firehose', done => {
+		const socketFirehose = new SocketIOFirehose(SOCKET_URL)
+		fm.options.firehose = socketFirehose
+
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'Norah Jones',
+			duration: 50,
+			time: '2015-06-15',
+			foreign_id: 'helloworld',
+		}
+		console.log('pre')
+
+		let s = socketFirehose.client.on('feed-user--george', message => {
+			console.log('message', message)
+			expect(message.operations[0].activity.foreign_id).to.equal('helloworld')
+			done()
+		})
+		console.log('s', s)
+		s.on('connect', () => {
+			console.log('connected')
+			fm.addActivity(activityData, userGeorge).then(() => {
+				console.log('added activity')
+			})
+		})
+		s.on('connect_error', err => {
+			console.log('connect_error', err)
+		})
+		s.on('connect_timeout', err => {
+			console.log('connect_timeout', err)
+		})
+		s.on('error', err => {
+			console.log('error', err)
+		})
 	})
 
 	it('should notify via faye firehose', done => {

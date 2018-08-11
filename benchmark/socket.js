@@ -1,18 +1,14 @@
-import ioCallable from 'socket.io'
+import ioS from 'socket.io'
 
-const ioServer = ioCallable(8002)
+const ioServer = ioS(8002)
 import ioClient from 'socket.io-client'
 
 console.log('started server')
 ioServer.on('connection', function(socket) {
 	console.log('connected')
-	socket.on('ferret', function(name, two, fn) {
-		console.log('name', name)
-		fn('woot' + name)
-	})
-	socket.on('a', function(data, fn) {
+
+	socket.on('a', function(data) {
 		console.log('name', data)
-		fn('woot' + data)
 	})
 })
 
@@ -21,6 +17,10 @@ socket.emit('ferret', 'tobi', 'two', function(data) {
 	console.log(data) // data will be 'woot'
 })
 
-socket.emit('a', { tony: 'twofingers' }, function(data) {
-	console.log(data) // data will be 'woot'
+let l = socket.emit('a', { tony: 'twofingers' })
+
+socket.on('ferret', function(name, two, fn) {
+	console.log('name', name)
+	fn('woot' + name)
 })
+console.log('l', l)
