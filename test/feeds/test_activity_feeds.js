@@ -59,7 +59,7 @@ describe('Test Feed Operations', () => {
 		fm.options.firehose = false
 	})
 
-	it.only('check socket firehose with fwd approach', done => {
+	it('check socket firehose with fwd approach', done => {
 		const firehose = new SocketIOFirehose(SOCKET_URL)
 
 		fm.options.firehose = firehose
@@ -116,7 +116,7 @@ describe('Test Feed Operations', () => {
 		fm.addActivity(activityData, userGeorge)
 	})
 
-	it.only('should notify via socket firehose', done => {
+	it('should notify via socket firehose', done => {
 		const firehose = new SocketIOFirehose(SOCKET_URL)
 		fm.options.firehose = firehose
 
