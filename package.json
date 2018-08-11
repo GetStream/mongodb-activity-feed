@@ -38,6 +38,7 @@
 		"mongoose-autopopulate": "^0.8.0",
 		"mongoose-timestamp": "^0.6.0",
 		"redlock": "^3.1.2",
+		"socket.io": "^2.1.1",
 		"stats-lite": "^2.1.1",
 		"winston": "^3.0.0"
 	},

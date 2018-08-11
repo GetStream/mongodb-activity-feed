@@ -34,10 +34,11 @@ async function prepareBenchmark() {
 	}
 	// listen to changes in the last feed
 	let feedID = followers - 1
-	const connected = await fm.options.firehose.fayeClient.subscribe(
-		`/feed-timeline--${feedID}`,
-		message => {
-			let foreignID = message.operations[0].activity.foreign_id
+	const connected = await fm.options.firehose.client.on(
+		`feed-timeline--${feedID}`,
+		(data, fn) => {
+			console.log('data', data)
+			let foreignID = data.operations[0].activity.foreign_id
 			t.stop('fanout and realtime', foreignID)
 		},
 	)

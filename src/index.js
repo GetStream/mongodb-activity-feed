@@ -7,6 +7,7 @@ import chunkify from './utils/chunk'
 import Redlock from 'redlock'
 import Queue from 'bull'
 import faye from 'faye'
+import ioClient from 'socket.io-client'
 
 export const OPERATIONS = { ADD_OPERATION: 1, REMOVE_OPERATION: 2 }
 
@@ -29,6 +30,33 @@ export class DummyFirehose {
 	}
 }
 
+// socketio realtime notifications
+export class SocketIOFirehose {
+	constructor(socketIOUrl) {
+		this.client = ioClient(socketIOUrl)
+	}
+	async notify(byFeed) {
+		let promises = []
+		let results = []
+
+		for (const operations of Object.values(byFeed)) {
+			let feed = operations[0].feed
+			let channel = `feed-${feed.group.name}--${feed.feedID}`
+			let promise = this.client.emit(channel, { operations, feed })
+			promises.push(promise)
+		}
+		if (promises.length > 0) {
+			try {
+				results = await Promise.all(promises)
+			} catch (e) {
+				console.log('failed to write to Socket...', e)
+			}
+		}
+
+		return results
+	}
+}
+
 // faye realtime notifications
 export class FayeFirehose {
 	constructor(fayeURL) {
@@ -39,30 +67,16 @@ export class FayeFirehose {
 		}
 	}
 	async notify(byFeed) {
-		console.log('notifya')
-		let promises = []
-		let results
+		let results = []
 
-		console.log('this.fayeClient', this.fayeClient)
+		for (const operations of Object.values(byFeed)) {
+			let feed = operations[0].feed
+			let channel = `/feed-${feed.group.name}--${feed.feedID}`
+			// running more than one publish operation at the same time breaks faye...
 
-		try {
-			for (const operations of Object.values(byFeed)) {
-				let feed = operations[0].feed
-				let channel = `/feed-${feed.group.name}--${feed.feedID}`
-				let promise = this.fayeClient.publish(channel, { operations, feed })
-				promises.push(promise)
-			}
-			if (promises.length > 0) {
-				try {
-					results = await Promise.all(promises)
-				} catch (e) {
-					console.log('failed to write to Faye...', e)
-				}
-			}
-		} catch (e) {
-			console.log('what', e)
+			let result = await this.fayeClient.publish(channel, { operations, feed })
+			results.push(result)
 		}
-		console.log('end notify')
 
 		return results
 	}

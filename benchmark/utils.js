@@ -5,14 +5,14 @@ https://www.npmjs.com/package/time-span
 https://www.npmjs.com/package/benchmark
 */
 import stream from 'getstream'
-import { FeedManager, FayeFirehose } from '../src/index.js'
+import { FeedManager, FayeFirehose, SocketIOFirehose } from '../src/index.js'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 import stats from 'stats-lite'
 
-const FAYE_URL = 'http://localhost:8000/faye'
+const SOCKET_URL = 'http://localhost:8002'
 
-const fayeFirehose = new FayeFirehose(FAYE_URL)
+const firehose = new SocketIOFirehose(SOCKET_URL)
 
 let fm = null
 
@@ -31,7 +31,7 @@ export function getFeedManager() {
 			},
 		)
 
-		fm = new FeedManager(mongo, redis, { firehose: fayeFirehose, bull: false })
+		fm = new FeedManager(mongo, redis, { firehose: firehose, bull: false })
 	}
 
 	return fm
