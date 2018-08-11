@@ -45,6 +45,10 @@ describe('Test Feed Operations', () => {
 
 		io.on('connection', function(socket) {
 			console.log('someone connected, yee')
+			// fwd messages to everyone
+			socket.on('firehose', function(msg) {
+				io.emit(msg.channel, msg)
+			})
 		})
 
 		bayeux.attach(server)
@@ -55,30 +59,21 @@ describe('Test Feed Operations', () => {
 		fm.options.firehose = false
 	})
 
-	it.only('check socket firehose', done => {
-		console.log('check socket firehose')
+	it.only('check socket firehose with fwd approach', done => {
 		const firehose = new SocketIOFirehose(SOCKET_URL)
-		const firehose2 = new SocketIOFirehose(SOCKET_URL)
 
 		fm.options.firehose = firehose
 
 		// wait for the connection to be made to the server
 		firehose.client.on('connect', () => {
-			console.log('connection made')
-			console.log('emit')
 			// subscribe to everything named channel
-			firehose.client.on('channel', function(message, fn) {
+			firehose.client.on('channel', function(message) {
 				console.log('received', message)
-				fn('woot' + name)
 				done()
 			})
-			// emit an event with the message hi
-			firehose.client.emit('channel', { message: 'hi' }, function(data) {
-				console.log(data) // data will be 'woot'
-			})
-			firehose2.client.emit('channel', { message: 'hi' }, function(data) {
-				console.log(data) // data will be 'woot'
-			})
+			// emit an event on the firehose channel
+			// server will forward to 'channel' channel
+			firehose.client.emit('firehose', { message: 'hi', channel: 'channel' })
 		})
 	})
 
@@ -121,9 +116,9 @@ describe('Test Feed Operations', () => {
 		fm.addActivity(activityData, userGeorge)
 	})
 
-	it('should notify via socket firehose', done => {
-		const socketFirehose = new SocketIOFirehose(SOCKET_URL)
-		fm.options.firehose = socketFirehose
+	it.only('should notify via socket firehose', done => {
+		const firehose = new SocketIOFirehose(SOCKET_URL)
+		fm.options.firehose = firehose
 
 		const activityData = {
 			actor: 'user:123',
@@ -133,28 +128,13 @@ describe('Test Feed Operations', () => {
 			time: '2015-06-15',
 			foreign_id: 'helloworld',
 		}
-		console.log('pre')
 
-		let s = socketFirehose.client.on('feed-user--george', message => {
-			console.log('message', message)
-			expect(message.operations[0].activity.foreign_id).to.equal('helloworld')
-			done()
-		})
-		console.log('s', s)
-		s.on('connect', () => {
-			console.log('connected')
-			fm.addActivity(activityData, userGeorge).then(() => {
-				console.log('added activity')
+		firehose.client.on('connect', () => {
+			firehose.client.on('feed-user--george', message => {
+				expect(message.operations[0].activity.foreign_id).to.equal('helloworld')
+				done()
 			})
-		})
-		s.on('connect_error', err => {
-			console.log('connect_error', err)
-		})
-		s.on('connect_timeout', err => {
-			console.log('connect_timeout', err)
-		})
-		s.on('error', err => {
-			console.log('error', err)
+			fm.addActivity(activityData, userGeorge)
 		})
 	})
 

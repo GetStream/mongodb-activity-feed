@@ -34,46 +34,14 @@ export class DummyFirehose {
 export class SocketIOFirehose {
 	constructor(socketIOUrl) {
 		this.client = ioClient(socketIOUrl)
-		const s = this.client
-		s.on('connect_error', err => {
-			console.log('connect_error', err)
-		})
-		s.on('connect_timeout', err => {
-			console.log('connect_timeout', err)
-		})
-		s.on('error', err => {
-			console.log('error', err)
-		})
-		s.on('reconnect_attempt', err => {
-			console.log('error', err)
-		})
-		s.on('disconnect', err => {
-			console.log('error', err)
-		})
 	}
 	async notify(byFeed) {
-		console.log('notify', byFeed)
 		for (const operations of Object.values(byFeed)) {
 			const feed = operations[0].feed
 			const channel = `feed-${feed.group.name}--${feed.feedID}`
-			const message = { operations, feed }
-			console.log(channel, message)
-			let s = this.client.emit(channel, message)
-			s.on('connect_error', err => {
-				console.log('connect_error', err)
-			})
-			s.on('connect_timeout', err => {
-				console.log('connect_timeout', err)
-			})
-			s.on('error', err => {
-				console.log('error', err)
-			})
-			s.on('reconnect_attempt', err => {
-				console.log('error', err)
-			})
-			s.on('disconnect', err => {
-				console.log('error', err)
-			})
+			const message = { operations, feed, channel }
+			// server forwards this to message.channel
+			this.client.emit('firehose', message)
 		}
 	}
 }
