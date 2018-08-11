@@ -35,26 +35,32 @@ export class FayeFirehose {
 		if (fayeURL.connection) {
 			this.fayeClient = fayeURL
 		} else {
-			console.log('fayeURL', fayeURL)
-			this.fayeClient = new faye.Client(fayeURL, { timeout: 5 })
+			this.fayeClient = new faye.Client(fayeURL, { timeout: 5, retry: 5 })
 		}
 	}
 	async notify(byFeed) {
 		console.log('notifya')
 		let promises = []
-		for (const operations of Object.values(byFeed)) {
-			let feed = operations[0].feed
-			let channel = `/feed-${feed.group.name}--${feed.feedID}`
-			let promise = this.fayeClient.publish(channel, { operations, feed })
-			promises.push(promise)
-		}
 		let results
-		if (promises.length > 0) {
-			try {
-				results = await Promise.all(promises)
-			} catch (e) {
-				console.log('failed to write to Faye...', e)
+
+		console.log('this.fayeClient', this.fayeClient)
+
+		try {
+			for (const operations of Object.values(byFeed)) {
+				let feed = operations[0].feed
+				let channel = `/feed-${feed.group.name}--${feed.feedID}`
+				let promise = this.fayeClient.publish(channel, { operations, feed })
+				promises.push(promise)
 			}
+			if (promises.length > 0) {
+				try {
+					results = await Promise.all(promises)
+				} catch (e) {
+					console.log('failed to write to Faye...', e)
+				}
+			}
+		} catch (e) {
+			console.log('what', e)
 		}
 		console.log('end notify')
 

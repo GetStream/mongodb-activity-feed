@@ -1,8 +1,7 @@
-import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
+import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
 
 const fm = getFeedManager()
-startFaye()
 const t = new Timer()
 const followers = 20000
 let targetID = `nick${followers}`

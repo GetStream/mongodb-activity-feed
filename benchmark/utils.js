@@ -9,23 +9,12 @@ import { FeedManager, FayeFirehose } from '../src/index.js'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 import stats from 'stats-lite'
-import http from 'http'
-import faye from 'faye'
-const FAYE_URL = 'http://localhost:8000/faye'
 
-// setup faye
-var server = http.createServer(),
-	bayeux = new faye.NodeAdapter({ mount: '/faye', timeout: 5 })
+const FAYE_URL = 'http://localhost:8000/faye'
 
 const fayeFirehose = new FayeFirehose(FAYE_URL)
 
 let fm = null
-
-export function startFaye() {
-	console.log('FAYE_URL', FAYE_URL)
-	bayeux.attach(server)
-	server.listen(8000)
-}
 
 export function getFeedManager() {
 	if (fm === null) {
