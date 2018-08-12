@@ -1,6 +1,6 @@
 {
 	"name": "mongodb-activity-feed",
-	"version": "0.1.9",
+	"version": "0.1.10",
 	"description": "Activity Feeds, Timeline, Notification Feed, News Feed with MongoDB, Mongo",
 	"main": "dist/index.js",
 	"homepage": "https://github.com/GetStream/mongodb-activity-feed-example",
