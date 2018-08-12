@@ -2,6 +2,8 @@ import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
 
 const fm = getFeedManager()
+fm.options.bull = true
+
 const t = new Timer()
 const followers = 20000
 let targetID = `nick${followers}`
@@ -34,19 +36,14 @@ async function prepareBenchmark() {
 	}
 	// listen to changes in the last feed
 	let feedID = followers - 1
-	const connected = await fm.options.firehose.client.on(
-		`feed-timeline--${feedID}`,
-		(data, fn) => {
-			console.log('data', data)
-			let foreignID = data.operations[0].activity.foreign_id
-			t.stop('fanout and realtime', foreignID)
-		},
-	)
-	console.log('connected', connected)
+	fm.options.firehose.client.on(`feed-timeline--${feedID}`, (data, fn) => {
+		let foreignID = data.operations[0].activity.foreign_id
+		t.stop('fanout and realtime', foreignID)
+	})
+	console.log('connected')
 }
 
 async function benchmarkFanout(n) {
-	console.log(1, targetFeed)
 	let activity = {
 		foreign_id: `test:${n}`,
 		actor: 'user:1',
@@ -56,7 +53,6 @@ async function benchmarkFanout(n) {
 
 	t.start('fanout and realtime', `test:${n}`)
 	let response = await fm.addActivity(activity, targetFeed)
-	console.log('2')
 
 	return response
 }
@@ -65,9 +61,10 @@ async function run() {
 	await prepareBenchmark()
 	console.log('starting benchmark now')
 	await runBenchmark(benchmarkFanout, process.env.REPETITIONS, process.env.CONCURRENCY)
-	setTimeout(() => {
+	setInterval(() => {
+		console.log('summarize')
 		t.summarize()
-	}, 7000)
+	}, 5000)
 }
 
 run()

@@ -8,22 +8,21 @@ Next, we’ll scale up the number of new activities we’re adding per minute ti
 
 */
 
-import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
+import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
 
 const fm = getFeedManager()
 fm.options.bull = true
-startFaye()
 const t = new Timer()
 
-const maxFollowers = 10000
+const maxFollowers = 50000
 
 async function prepareBenchmark() {
 	let steps = [
 		{ start: 0, stop: 50, followers: maxFollowers / 10 ** 4 },
-		{ start: 50, stop: 60, followers: maxFollowers / 10 ** 3 },
-		{ start: 60, stop: 80, followers: maxFollowers / 10 ** 2 },
-		{ start: 80, stop: 95, followers: maxFollowers / 10 },
+		{ start: 50, stop: 70, followers: maxFollowers / 10 ** 3 },
+		{ start: 70, stop: 85, followers: maxFollowers / 10 ** 2 },
+		{ start: 85, stop: 95, followers: maxFollowers / 10 },
 		{ start: 95, stop: 100, followers: maxFollowers },
 	]
 	console.log('steps', steps)
@@ -65,15 +64,13 @@ async function prepareBenchmark() {
 
 	let last = maxFollowers - 1
 
-	const connected = await fm.options.firehose.fayeClient.subscribe(
-		`/feed-timeline--99-${last}`,
-		message => {
-			let foreignID = message.operations[0].activity.foreign_id
-			t.stop('fanout and realtime', foreignID)
-		},
-	)
+	fm.options.firehose.client.on(`feed-timeline--99-${last}`, message => {
+		let foreignID = message.operations[0].activity.foreign_id
+		t.stop('fanout and realtime', foreignID)
+		t.stop('benchmark')
+	})
 
-	console.log('ready for benchmark', connected)
+	console.log('ready for benchmark')
 
 	return userFeeds
 }
@@ -105,7 +102,9 @@ async function run() {
 		process.env.REPETITIONS,
 		process.env.CONCURRENCY,
 	)
+	t.start('benchmark')
 	await runBenchmark(benchmark, process.env.REPETITIONS, process.env.CONCURRENCY)
+
 	setInterval(() => {
 		console.log('summarize')
 		t.summarize()

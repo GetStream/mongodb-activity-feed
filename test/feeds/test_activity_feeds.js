@@ -47,7 +47,10 @@ describe('Test Feed Operations', () => {
 			console.log('someone connected, yee')
 			// fwd messages to everyone
 			socket.on('firehose', function(msg) {
-				io.emit(msg.channel, msg)
+				let channels = msg.channels || [msg.channel]
+				for (const channel of channels) {
+					io.emit(channel, msg)
+				}
 			})
 		})
 

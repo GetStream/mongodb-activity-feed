@@ -9,8 +9,9 @@ It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
 
 ## TODO:
 
--   Benchmark 3, Stream edition
--   ReRun benchmarks, update blogpost
+-   Update & publish blogpost
+-   Document benchmark and firehose
+-   SlideShare
 
 ### Install
 
@@ -230,3 +231,5 @@ yarn lint
 ```bash
 yarn prettier
 ```
+
+## Benchmarks

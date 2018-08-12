@@ -6,7 +6,9 @@ import ioClient from 'socket.io-client'
 console.log('started server')
 ioServer.on('connection', function(serverSocket) {
 	serverSocket.on('firehose', function(msg) {
-		console.log('sending to all clients on', msg.channel)
-		ioServer.emit(msg.channel, msg)
+		let channels = msg.channels || [msg.channel]
+		for (const channel of channels) {
+			io.emit(channel, msg)
+		}
 	})
 })
