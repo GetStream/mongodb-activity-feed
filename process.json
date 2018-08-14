@@ -11,7 +11,7 @@
 			"name": "socket",
 			"cwd": "dist/benchmark",
 			"script": "socket.js",
-			"instances": "2",
+			"instances": "1",
 			"exec_mode": "cluster"
 		}
 	]

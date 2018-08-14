@@ -38,7 +38,8 @@ async function prepareBenchmark() {
 	await Promise.all(promises)
 	// listen to changes in the last feed
 	let feedID = followers - 1
-	fm.options.firehose.client.on(`feed-timeline--${feedID}`, (data, fn) => {
+	console.log('listening to socketurl', fm.options.firehose.url)
+	fm.options.firehose.client.on(`feed-timeline--${feedID}`, data => {
 		let foreignID = data.operations[0].activity.foreign_id
 		t.stop('fanout and realtime', foreignID)
 	})

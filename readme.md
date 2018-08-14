@@ -277,13 +277,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=1 CONCURRENCY=1 babel-node read_latency_mongo.js
+REPETITIONS=10 CONCURRENCY=5 babel-node read_latency_mongo.js
 ```
 
 Stream
 
 ```bash
- REPETITIONS=1 CONCURRENCY=1 babel-node read_latency.js
+ REPETITIONS=10 CONCURRENCY=5 babel-node read_latency.js
 ```
 
 The blogpost runs the benchmark with 10 repetitions and concurrency set to 5, 10 and 20.
@@ -294,17 +294,16 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency_mongo.js
+CONCURRENCY=1 babel-node fanout_latency_mongo.js
 ```
 
 Stream
 
 ```bash
-REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency.js
+CONCURRENCY=1 babel-node fanout_latency.js
 ```
 
 The blogpost runs the benchmark with 1, 3 and 10 for the concurrency.
-Repetitions is set to 1.
 
 ### Benchmark 3 - Network Simulation/ Capacity
 
@@ -312,11 +311,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=1 CONCURRENCY=1 babel-node capacity_mongo.js
+MAX_FOLLOWERS=10000 babel-node capacity_mongo.js
 ```
 
 Stream
 
 ```bash
-REPETITIONS=1 CONCURRENCY=1 babel-node capacity.js
+MAX_FOLLOWERS=10000 babel-node capacity.js
 ```
+
+The blogpost increase max followers from 1k to 10k and finally 50k

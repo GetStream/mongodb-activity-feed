@@ -9,13 +9,13 @@ Next, we’ll scale up the number of new activities we’re adding per minute ti
 */
 import './loadenv'
 import { getFeedManager, Timer, runBenchmark } from './utils'
-import chunkify from '../src/utils/chunk'
+import chunkify from '../utils/chunk'
 
 const fm = getFeedManager()
 fm.options.bull = true
 const t = new Timer()
 
-const maxFollowers = 50000
+const maxFollowers = process.env.MAX_FOLLOWERS || 1000
 
 async function prepareBenchmark() {
 	let steps = [
@@ -102,7 +102,7 @@ async function run() {
 		process.env.CONCURRENCY,
 	)
 	t.start('benchmark')
-	await runBenchmark(benchmark, process.env.REPETITIONS, process.env.CONCURRENCY)
+	await runBenchmark(benchmark, 1, 1)
 
 	setInterval(() => {
 		console.log('summarize')

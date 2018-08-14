@@ -33,6 +33,7 @@ export class DummyFirehose {
 // socketio realtime notifications
 export class SocketIOFirehose {
 	constructor(socketIOUrl) {
+		this.url = socketIOUrl
 		this.client = ioClient(socketIOUrl)
 	}
 	async notify(byFeed) {
