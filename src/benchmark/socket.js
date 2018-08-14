@@ -1,3 +1,4 @@
+import './loadenv'
 import ioS from 'socket.io'
 
 const SOCKETIO_PORT = 8002

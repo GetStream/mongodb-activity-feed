@@ -1,3 +1,4 @@
+import './loadenv'
 import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
 
 let activities = []

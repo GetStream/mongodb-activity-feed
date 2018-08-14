@@ -21,20 +21,24 @@ export const SETTINGS = {
 	socket: process.env.SOCKET_URL || 'http://localhost:8002',
 }
 
+console.log('running with settings', SETTINGS)
+
 const firehose = new SocketIOFirehose(SETTINGS.socket)
 
 export function getFeedManager() {
 	if (fm === null) {
 		const redis = new Redis(`redis://${SETTINGS.redis.host}:${SETTINGS.redis.port}/9`)
 		const mongo = mongoose.connect(
-			SETTINGS.mongodb,
+			SETTINGS.mongo,
 			{
+				dbName: 'benchmark',
 				autoIndex: true,
 				reconnectTries: Number.MAX_VALUE,
 				reconnectInterval: 500,
 				poolSize: 50,
 				bufferMaxEntries: 0,
 				keepAlive: 120,
+				useNewUrlParser: true,
 			},
 		)
 

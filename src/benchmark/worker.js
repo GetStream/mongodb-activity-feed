@@ -1,3 +1,4 @@
+import './loadenv'
 import { getFeedManager, SETTINGS } from './utils'
 
 const fm = getFeedManager()

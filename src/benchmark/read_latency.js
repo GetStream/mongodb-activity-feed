@@ -1,3 +1,4 @@
+import './loadenv'
 import { getStreamClient, Timer, runBenchmark } from './utils'
 
 let activities = []

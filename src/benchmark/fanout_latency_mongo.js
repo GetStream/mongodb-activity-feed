@@ -1,3 +1,4 @@
+import './loadenv'
 import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../utils/chunk'
 

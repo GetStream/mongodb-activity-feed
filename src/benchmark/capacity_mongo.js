@@ -7,7 +7,7 @@ are very popular and others are not.
 Next, we’ll scale up the number of new activities we’re adding per minute till the infrastructure breaks.
 
 */
-
+import './loadenv'
 import { getFeedManager, Timer, runBenchmark } from './utils'
 import chunkify from '../src/utils/chunk'
 
