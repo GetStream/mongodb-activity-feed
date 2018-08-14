@@ -38,7 +38,7 @@ export const ActivityFeedSchema = new Schema(
 	{ collection: 'activity_feed' },
 )
 
-ActivityFeedSchema.index({ feed: 1, time: -1 })
+ActivityFeedSchema.index({ feed: 1, time: -1, operationTime: -1 })
 ActivityFeedSchema.plugin(autopopulate)
 
 module.exports = exports = mongoose.model('ActivityFeed', ActivityFeedSchema)

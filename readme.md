@@ -7,12 +7,6 @@ https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/
 
 It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to reduce the need for locks.
 
-## TODO:
-
--   Update & publish blogpost
--   Document benchmark and firehose
--   SlideShare
-
 ### Install
 
 ```bash
@@ -263,7 +257,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
 
-You can create a `.env` file in the benchmark directory to make this easier
+You can create a `.env` file to make this easier
 
 For dev purposes you can use this setup:
 
@@ -277,6 +271,8 @@ This will start a worker and socket.io cluster.
 
 ### Benchmark 1 - Read latency
 
+Note: Babel-Node is convenient during development. Use the compiled version in the `dist` dir for production benchmarks.
+
 MongoDB
 
 ```bash
@@ -289,6 +285,8 @@ Stream
 ```bash
  REPETITIONS=1 CONCURRENCY=1 babel-node read_latency.js
 ```
+
+The blogpost runs the benchmark with 10 repetitions and concurrency set to 5, 10 and 20.
 
 ### Benchmark 2 - Fanout & realtime latency
 
@@ -304,6 +302,9 @@ Stream
 ```bash
 REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency.js
 ```
+
+The blogpost runs the benchmark with 1, 3 and 10 for the concurrency.
+Repetitions is set to 1.
 
 ### Benchmark 3 - Network Simulation/ Capacity
 

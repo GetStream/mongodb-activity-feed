@@ -1,11 +1,10 @@
 import './loadenv'
-import { getFeedManager, Timer, runBenchmark, startFaye } from './utils'
+import { getFeedManager, Timer, runBenchmark } from './utils'
 
 let activities = []
 
 const fm = getFeedManager()
 const t = new Timer()
-startFaye()
 
 for (let i = 0; i < 3000; i++) {
 	let activity = {

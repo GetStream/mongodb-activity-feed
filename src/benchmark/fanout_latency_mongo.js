@@ -31,10 +31,11 @@ async function prepareBenchmark() {
 		}
 		follows.push({ source, target })
 	}
-
+	let promises = []
 	for (const group of chunkify(follows, 1000)) {
-		await fm.followMany(group, 0)
+		promises.push(fm.followMany(group, 0))
 	}
+	await Promise.all(promises)
 	// listen to changes in the last feed
 	let feedID = followers - 1
 	fm.options.firehose.client.on(`feed-timeline--${feedID}`, (data, fn) => {

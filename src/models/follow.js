@@ -22,6 +22,7 @@ export const FollowSchema = new Schema(
 )
 
 FollowSchema.index({ source: 1, target: 1 }, { unique: true })
+FollowSchema.index({ target: -1 })
 
 FollowSchema.plugin(timestamps)
 FollowSchema.plugin(autopopulate)
