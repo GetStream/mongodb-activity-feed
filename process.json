@@ -1,0 +1,28 @@
+{
+	"apps": [
+		{
+			"name": "fanout",
+			"cwd": "dist/benchmark",
+			"script": "worker.js",
+			"instances": "2",
+			"exec_mode": "cluster",
+			"env": {
+				"REDIS_HOST": "localhost",
+				"REDIS_PORT": 6379,
+				"MONGODB_CONNECTION": "mongodb://localhost:27017/benchmark",
+				"SOCKET_URL": "http://localhost:8002"
+			}
+		},
+		{
+			"name": "socket",
+			"cwd": "dist/benchmark",
+			"script": "socket.js",
+			"instances": "2",
+			"exec_mode": "cluster",
+			"env": {
+				"REDIS_HOST": "localhost",
+				"REDIS_PORT": 6379
+			}
+		}
+	]
+}
