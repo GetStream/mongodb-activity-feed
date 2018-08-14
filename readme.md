@@ -247,6 +247,18 @@ yarn prettier
 
 ## Benchmarks
 
+### Benchmark prep
+
+For dev purposes you can use this setup:
+
+```bash
+git clone ..
+yarn build
+pm2 start process.json
+```
+
+This will start a worker and socket.io cluster
+
 ### Benchmark 1 - Read latency
 
 MongoDB
