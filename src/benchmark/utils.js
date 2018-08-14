@@ -19,6 +19,11 @@ export const SETTINGS = {
 	},
 	mongo: process.env.MONGODB_CONNECTION || 'mongodb://localhost:27017/benchmark',
 	socket: process.env.SOCKET_URL || 'http://localhost:8002',
+	stream: {
+		app_id: process.env.STREAM_APP_ID,
+		key: process.env.STREAM_API_KEY,
+		secret: process.env.STREAM_API_SECRET,
+	},
 }
 
 console.log('running with settings', SETTINGS)
@@ -62,9 +67,9 @@ export async function runBenchmark(callable, repetitions = 1, concurrency = 1) {
 
 export function getStreamClient() {
 	let client = stream.connect(
-		process.env.API_KEY,
-		process.env.API_SECRET,
-		process.env.APP_ID,
+		SETTINGS.stream.key,
+		SETTINGS.stream.secret,
+		SETTINGS.stream.app_id,
 	)
 	return client
 }

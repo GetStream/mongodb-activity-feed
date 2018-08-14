@@ -42,25 +42,25 @@ const fm = new FeedManager(mongoConnection, redisConnection, {
 And a bit longer one:
 
 ```node
-import {FeedManager, FayeFirehose} from 'mongodb-activity-feed'
+import { FeedManager, FayeFirehose } from 'mongodb-activity-feed'
 import Redis from 'ioredis'
 import mongoose from 'mongoose'
 
 const redis = new Redis('redis://localhost:6379/9')
 const mongo = mongoose.connect(
-    'mongodb://localhost:27017/mydb',
-    {
-        autoIndex: true,
-        reconnectTries: Number.MAX_VALUE,
-        reconnectInterval: 500,
-        poolSize: 50,
-        bufferMaxEntries: 0,
-        keepAlive: 120,
-    },
+	'mongodb://localhost:27017/mydb',
+	{
+		autoIndex: true,
+		reconnectTries: Number.MAX_VALUE,
+		reconnectInterval: 500,
+		poolSize: 50,
+		bufferMaxEntries: 0,
+		keepAlive: 120,
+	},
 )
 const fayeFirehose = new FayeFirehose('http://localhost:8000/faye')
 
-const fm = new FeedManager(mongo, redis, {bull: true, firehose: fayeFirehose})
+const fm = new FeedManager(mongo, redis, { bull: true, firehose: fayeFirehose })
 ```
 
 The **bull** option determines if activity fanout is done over a bull queue or synchronous.
@@ -75,9 +75,9 @@ const timelineScott = await fm.getOrCreateFeed('timeline', 'scott')
 const userNick = await fm.getOrCreateFeed('user', 'nick')
 await fm.follow(timelineScott, userNick)
 const activity = {
-    actor: 'user:nick',
-    verb: 'watch',
-    object: 'video:123',
+	actor: 'user:nick',
+	verb: 'watch',
+	object: 'video:123',
 }
 await fm.addActivity(activity, userNick)
 const activities = await fm.readFeed(timelineScott, 0, 10)
@@ -91,14 +91,14 @@ Here's a quick tutorial on a simple timeline with mongodb-activity-feed
 const notificationBen = await fm.getOrCreateFeed('notification', 'ben')
 // lets say you want to notify Ben that Nick likes his post
 const activity = {
-    actor: 'user:nick',
-    verb: 'like',
-    object: 'post:123',
+	actor: 'user:nick',
+	verb: 'like',
+	object: 'post:123',
 }
 await fm.addActivity(activity, notificationBen)
 // group together all activities with the same verb and actor
 const aggregationMethod = activity => {
-    return activity.verb + '__' + activity.actor
+	return activity.verb + '__' + activity.actor
 }
 const groups = await fm.readFeed(notificationBen, 0, 3, null, aggregationMethod)
 ```
@@ -109,9 +109,9 @@ Add an activity like this.
 
 ```node
 const activity = {
-    actor: 'user:nick',
-    verb: 'like',
-    object: 'post:123',
+	actor: 'user:nick',
+	verb: 'like',
+	object: 'post:123',
 }
 fm.addActivity(activity, feed)
 ```
@@ -122,9 +122,9 @@ Remove an activity:
 
 ```node
 const activity = {
-    actor: 'user:nick',
-    verb: 'like',
-    object: 'post:123',
+	actor: 'user:nick',
+	verb: 'like',
+	object: 'post:123',
 }
 fm.removeActivity(activity, feed)
 ```
@@ -145,7 +145,7 @@ await fm.follow(timelineScott, userNick, 10)
 const source = await fm.getOrCreateFeed('timeline', 'scott')
 const target = await fm.getOrCreateFeed('user', 'nick')
 const target2 = await fm.getOrCreateFeed('user', 'john')
-await fm.followMany([{source, target}, {source, target2}], 10)
+await fm.followMany([{ source, target }, { source, target2 }], 10)
 ```
 
 ### Unfollow a feed
@@ -159,7 +159,10 @@ await fm.unfollow(timelineScott, userNick)
 ### Create Many Feeds at Once
 
 ```node
-const feedReferences = [{group: 'timeline', feedID: 'scott'}, {group: 'notification', feedID: 'ben'}]
+const feedReferences = [
+	{ group: 'timeline', feedID: 'scott' },
+	{ group: 'notification', feedID: 'ben' },
+]
 const feedMap = await fm.getOrCreateFeeds(feedReferences)
 ```
 
@@ -178,7 +181,7 @@ await fm.readFeed(notificationAlex, 0, 10)
 const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
 // asumes that you have a property on your activity called "popularity"
 const rankingMethod = (a, b) => {
-    return b.popularity - a.popularity
+	return b.popularity - a.popularity
 }
 const activities = await fm.readFeed(notificationAlex, 0, 3, rankingMethod)
 ```
@@ -189,7 +192,7 @@ const activities = await fm.readFeed(notificationAlex, 0, 3, rankingMethod)
 const notificationAlex = await fm.getOrCreateFeed('notification', 'alex')
 // group together all activities with the same verb and actor
 const aggregationMethod = activity => {
-    return activity.verb + '__' + activity.actor
+	return activity.verb + '__' + activity.actor
 }
 await fm.readFeed(notificationAlex, 0, 10, null, aggregationMethod)
 ```
@@ -205,8 +208,7 @@ const firehose = new SocketIOFirehose(SOCKET_URL)
 // faye
 const firehoseFaye = new FayeFirehose(FAYE_URL)
 // dummy firehose
-const firehoseDummy = new new DummyFirehose(message => {
-})
+const firehoseDummy = new new DummyFirehose(message => {})()
 fm = new FeedManager(mongo, redis, { firehose: firehose, bull: false })
 ```
 
@@ -249,15 +251,29 @@ yarn prettier
 
 ### Benchmark prep
 
+You'll want to configure the following environment variables
+
+```bash
+STREAM_APP_ID=appid
+STREAM_API_KEY=key
+STREAM_API_SECRET=secret
+MONGODB_CONNECTION=connectionstring
+SOCKET_URL=http://localhost:8002
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+You can create a `.env` file in the benchmark directory to make this easier
+
 For dev purposes you can use this setup:
 
 ```bash
-git clone ..
+git clone https://github.com/GetStream/mongodb-activity-feed.git
 yarn build
 pm2 start process.json
 ```
 
-This will start a worker and socket.io cluster
+This will start a worker and socket.io cluster.
 
 ### Benchmark 1 - Read latency
 
@@ -265,13 +281,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=3 CONCURRENCY=5 babel-node read_latency_mongo.js
+REPETITIONS=1 CONCURRENCY=1 babel-node read_latency_mongo.js
 ```
 
 Stream
 
 ```bash
-APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node read_latency.js
+ REPETITIONS=1 CONCURRENCY=1 babel-node read_latency.js
 ```
 
 ### Benchmark 2 - Fanout & realtime latency
@@ -280,13 +296,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=3 CONCURRENCY=5 babel-node fanout_latency_mongo.js
+REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency_mongo.js
 ```
 
 Stream
 
 ```bash
-APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency.js
+REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency.js
 ```
 
 ### Benchmark 3 - Network Simulation/ Capacity
@@ -295,11 +311,11 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=3 CONCURRENCY=5 babel-node capacity_mongo.js
+REPETITIONS=1 CONCURRENCY=1 babel-node capacity_mongo.js
 ```
 
 Stream
 
 ```bash
-APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node capacity.js
+REPETITIONS=1 CONCURRENCY=1 babel-node capacity.js
 ```
