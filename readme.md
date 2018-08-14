@@ -252,6 +252,7 @@ yarn prettier
 MongoDB
 
 ```bash
+# flush your mongo instance before running this
 REPETITIONS=3 CONCURRENCY=5 babel-node read_latency_mongo.js
 ```
 
@@ -266,6 +267,7 @@ APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-nod
 MongoDB
 
 ```bash
+# flush your mongo instance before running this
 REPETITIONS=3 CONCURRENCY=5 babel-node fanout_latency_mongo.js
 ```
 
@@ -280,6 +282,7 @@ APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-nod
 MongoDB
 
 ```bash
+# flush your mongo instance before running this
 REPETITIONS=3 CONCURRENCY=5 babel-node capacity_mongo.js
 ```
 

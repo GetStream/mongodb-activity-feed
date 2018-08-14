@@ -52,7 +52,6 @@ async function prepareBenchmark() {
 		}
 	}
 	console.log('creating the follows', follows.length)
-	throw Error('wtf')
 
 	// actually do the follows
 	for (const group of chunkify(follows, 1000)) {

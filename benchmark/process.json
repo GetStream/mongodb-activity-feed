@@ -1,0 +1,18 @@
+{
+	"apps": [
+		{
+			"name": "fanout",
+			"cwd": "./",
+			"script": "worker.js",
+			"instances": "2",
+			"exec_mode": "cluster"
+		},
+		{
+			"name": "socket",
+			"cwd": "./",
+			"script": "socket.js",
+			"instances": "2",
+			"exec_mode": "cluster"
+		}
+	]
+}
