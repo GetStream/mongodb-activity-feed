@@ -41,8 +41,6 @@ async function prepareBenchmark() {
 	console.log('2 creating the feeds', feedReferences.length)
 	let feedMap = await fm.getOrCreateFeeds(feedReferences)
 
-	console.log('creating the follows')
-
 	let follows = []
 	for (const step of steps) {
 		for (let x = step.start; x < step.stop; x++) {
@@ -53,6 +51,8 @@ async function prepareBenchmark() {
 			}
 		}
 	}
+	console.log('creating the follows', follows.length)
+	throw Error('wtf')
 
 	// actually do the follows
 	for (const group of chunkify(follows, 1000)) {

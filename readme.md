@@ -197,6 +197,19 @@ await fm.readFeed(notificationAlex, 0, 10, null, aggregationMethod)
 Activities are unique on the combination of `foreign_id` and `time`.
 If you don't specify foreign id the full activity object will be used.
 
+### Firehose Configuration
+
+```node
+// socket (recommended)
+const firehose = new SocketIOFirehose(SOCKET_URL)
+// faye
+const firehoseFaye = new FayeFirehose(FAYE_URL)
+// dummy firehose
+const firehoseDummy = new new DummyFirehose(message => {
+})
+fm = new FeedManager(mongo, redis, { firehose: firehose, bull: false })
+```
+
 ## Pros/Cons
 
 MongoDB is a nice general purpose database. For building activity feeds it's not a great fit though.
@@ -233,3 +246,45 @@ yarn prettier
 ```
 
 ## Benchmarks
+
+### Benchmark 1 - Read latency
+
+MongoDB
+
+```bash
+REPETITIONS=3 CONCURRENCY=5 babel-node read_latency_mongo.js
+```
+
+Stream
+
+```bash
+APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node read_latency.js
+```
+
+### Benchmark 2 - Fanout & realtime latency
+
+MongoDB
+
+```bash
+REPETITIONS=3 CONCURRENCY=5 babel-node fanout_latency_mongo.js
+```
+
+Stream
+
+```bash
+APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node fanout_latency.js
+```
+
+### Benchmark 3 - Network Simulation/ Capacity
+
+MongoDB
+
+```bash
+REPETITIONS=3 CONCURRENCY=5 babel-node capacity_mongo.js
+```
+
+Stream
+
+```bash
+APP_ID=appid API_KEY=key API_SECRET=secret REPETITIONS=1 CONCURRENCY=1 babel-node capacity.js
+```

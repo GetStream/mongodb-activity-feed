@@ -33,14 +33,19 @@ async function prepareBenchmark() {
 }
 
 async function benchmarkFanout(n) {
-	let activity = {
-		foreign_id: `test:${n}`,
-		actor: 'user:1',
-		verb: 'tweet',
-		object: 'tweet:1',
+	let activities = []
+	for (let x = 0; x < process.env.CONCURRENCY; x++) {
+		const activity = {
+			foreign_id: `test:${n}`,
+			actor: 'user:1',
+			verb: 'tweet',
+			object: 'tweet:1',
+		}
+		activities.push(activity)
 	}
+	console.log(`inserting ${activities.length} at once`)
 	t.start('fanout and realtime', `test:${n}`)
-	let response = await feed.addActivity(activity)
+	let response = await feed.addActivities(activities)
 
 	return response
 }
@@ -48,7 +53,7 @@ async function benchmarkFanout(n) {
 async function run() {
 	await prepareBenchmark()
 	console.log('starting benchmark now')
-	await runBenchmark(benchmarkFanout, process.env.REPETITIONS, process.env.CONCURRENCY)
+	await runBenchmark(benchmarkFanout, process.env.REPETITIONS, 1)
 	setTimeout(() => {
 		t.summarize()
 	}, 12000)

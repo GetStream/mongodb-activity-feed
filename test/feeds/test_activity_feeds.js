@@ -141,6 +141,41 @@ describe('Test Feed Operations', () => {
 		})
 	})
 
+	it('should notify via socket firehose cluster mode', done => {
+		// configure a cluster enabled socketio server
+		let io = require('socket.io')(3001)
+		let redis = require('socket.io-redis')
+		io.adapter(redis({ host: 'localhost', port: 6379 }))
+		io.on('connection', function(serverSocket) {
+			serverSocket.on('firehose', function(msg) {
+				let channels = msg.channels || [msg.channel]
+				for (const channel of channels) {
+					io.emit(channel, msg)
+				}
+			})
+		})
+
+		const firehose = new SocketIOFirehose('http://localhost:3001')
+		fm.options.firehose = firehose
+
+		const activityData = {
+			actor: 'user:123',
+			verb: 'listen',
+			object: 'Norah Jones',
+			duration: 50,
+			time: '2015-06-15',
+			foreign_id: 'helloworld',
+		}
+
+		firehose.client.on('connect', () => {
+			firehose.client.on('feed-user--george', message => {
+				expect(message.operations[0].activity.foreign_id).to.equal('helloworld')
+				done()
+			})
+			fm.addActivity(activityData, userGeorge)
+		})
+	})
+
 	it('should notify via faye firehose', done => {
 		const fayeFirehose = new FayeFirehose(FAYE_URL)
 		fm.options.firehose = fayeFirehose
