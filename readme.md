@@ -340,3 +340,15 @@ MAX_FOLLOWERS=1000 node capacity.js
 ```
 
 The blogpost increase max followers from 1k to 10k and finally 50k
+
+### Benchmark prep (production notes)
+
+1.  SocketIO:
+
+Note that you need to configure the load balancer for Socket.io to be sticky
+
+https://socket.io/docs/using-multiple-nodes/
+
+2.  Redis
+
+For optimal performance be sure to setup redis to _not_ be persistent
