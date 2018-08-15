@@ -125,7 +125,7 @@ export class FeedManager {
 					feed: { $in: targetIDs },
 				})
 					.limit(copyLimit)
-					.sort('-time')
+					.sort({ time: -1, operationTime: -1 })
 				// write these to the source feed in one go
 				const operations = []
 				for (const reference of activityReferences) {
