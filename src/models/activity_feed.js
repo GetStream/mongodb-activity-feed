@@ -41,4 +41,13 @@ export const ActivityFeedSchema = new Schema(
 ActivityFeedSchema.index({ feed: 1, time: -1, operationTime: -1 })
 ActivityFeedSchema.plugin(autopopulate)
 
+ActivityFeedSchema.pre('find', function() {
+	this.start = Date.now()
+})
+
+ActivityFeedSchema.post('find', function() {
+	// prints number of milliseconds the query took
+	console.log('find() took ' + (Date.now() - this.start) + ' millis')
+})
+
 module.exports = exports = mongoose.model('ActivityFeed', ActivityFeedSchema)

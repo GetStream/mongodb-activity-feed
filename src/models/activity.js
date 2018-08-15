@@ -36,4 +36,13 @@ export const ActivitySchema = new Schema(
 
 ActivitySchema.plugin(timestamps)
 
+ActivitySchema.pre('find', function() {
+	this.start = Date.now()
+})
+
+ActivitySchema.post('find', function(result) {
+	// prints number of milliseconds the query took
+	console.log('find() took ' + (Date.now() - this.start) + ' millis')
+})
+
 module.exports = exports = mongoose.model('Activity', ActivitySchema)

@@ -46,6 +46,9 @@ export function getFeedManager() {
 				useNewUrlParser: true,
 			},
 		)
+		if (process.env.MONGO_DEBUG === '1') {
+			mongoose.set('debug', true)
+		}
 
 		fm = new FeedManager(mongo, redis, { firehose: firehose, bull: false })
 	}
