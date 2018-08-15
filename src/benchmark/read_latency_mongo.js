@@ -6,7 +6,7 @@ let activities = []
 const fm = getFeedManager()
 const t = new Timer()
 
-for (let i = 0; i < 1; i++) {
+for (let i = 0; i < 3000; i++) {
 	let activity = {
 		foreign_id: `test:${i}`,
 		time: '2018-08-01T04:06:02.223654',
