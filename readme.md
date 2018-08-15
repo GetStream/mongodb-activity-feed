@@ -243,9 +243,25 @@ yarn prettier
 
 ## Benchmarks
 
-### Benchmark prep
+These docs aim to make it easy to reproduce these benchmark.
+Initial plan is to run these again in 2019 to see how Mongo and Stream changed.
 
-You'll want to configure the following environment variables
+### Benchmark prep (dev mode)
+
+** Step 1 - Clone the repo **
+
+```bash
+git clone https://github.com/GetStream/mongodb-activity-feed.git
+cd mongodb-activity-feed
+yarn install
+brew install redis mongodb
+brew services start redis
+brew services start mongodb
+```
+
+** Step 2 - Environment variables **
+
+You'll want to configure the following environment variables in a `.env` file
 
 ```bash
 STREAM_APP_ID=appid
@@ -257,33 +273,36 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
 
-You can create a `.env` file to make this easier
+** Step 3 - Start worker and socketio **
 
-For dev purposes you can use this setup:
+For dev purposes you can use this setup to start the processes
 
 ```bash
-git clone https://github.com/GetStream/mongodb-activity-feed.git
 yarn build
 pm2 start process.json
 ```
 
 This will start a worker and socket.io cluster.
 
-### Benchmark 1 - Read latency
+** Step 4 - Benchmark dir **
 
-Note: Babel-Node is convenient during development. Use the compiled version in the `dist` dir for production benchmarks.
+```bash
+cd dist/benchmark
+```
+
+### Benchmark 1 - Read latency
 
 MongoDB
 
 ```bash
 # flush your mongo instance before running this
-REPETITIONS=10 CONCURRENCY=5 babel-node read_latency_mongo.js
+REPETITIONS=10 CONCURRENCY=5 node read_latency_mongo.js
 ```
 
 Stream
 
 ```bash
- REPETITIONS=10 CONCURRENCY=5 babel-node read_latency.js
+ REPETITIONS=10 CONCURRENCY=5 node read_latency.js
 ```
 
 The blogpost runs the benchmark with 10 repetitions and concurrency set to 5, 10 and 20.
@@ -294,13 +313,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-CONCURRENCY=1 babel-node fanout_latency_mongo.js
+CONCURRENCY=1 node fanout_latency_mongo.js
 ```
 
 Stream
 
 ```bash
-CONCURRENCY=1 babel-node fanout_latency.js
+CONCURRENCY=1 node babel-node fanout_latency.js
 ```
 
 The blogpost runs the benchmark with 1, 3 and 10 for the concurrency.
@@ -311,13 +330,13 @@ MongoDB
 
 ```bash
 # flush your mongo instance before running this
-MAX_FOLLOWERS=10000 babel-node capacity_mongo.js
+MAX_FOLLOWERS=1000 node capacity_mongo.js
 ```
 
 Stream
 
 ```bash
-MAX_FOLLOWERS=10000 babel-node capacity.js
+MAX_FOLLOWERS=1000 node capacity.js
 ```
 
 The blogpost increase max followers from 1k to 10k and finally 50k

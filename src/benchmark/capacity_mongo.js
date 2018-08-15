@@ -54,9 +54,11 @@ async function prepareBenchmark() {
 	console.log('creating the follows', follows.length)
 
 	// actually do the follows
+	let promises = []
 	for (const group of chunkify(follows, 1000)) {
-		await fm.followMany(group, 0)
+		promises.push(fm.followMany(group, 0))
 	}
+	await Promise.all(promises)
 	console.log('3 creating the user feeds')
 
 	let userFeeds = feedMap['user']
