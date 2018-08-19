@@ -1,9 +1,8 @@
 ## Activity Feed Node & Mongo DB
 
 Simple example of how to build a news feed with Node and MongoDB.
-I created it for this blogpost: "Building Activity Feeds with MongoDB vs the alternatives"
+I created it for this blogpost: "[Scalable News Feeds - MongoDB vs Stream](https://getstream.io/activity-feeds/mongodb/)"
 
-https://docs.google.com/document/d/11gfMOPgE476fLsb2sXYy955X2G4egUv4p7-zlXdf8hU/edit
 
 It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to reduce the need for locks.
 
