@@ -2,7 +2,7 @@
 
 Simple example of how to build a news feed with Node and MongoDB.
 I created it for this blogpost: "[Scalable News Feeds - MongoDB vs Stream](https://getstream.io/activity-feeds/mongodb/)"
-
+Presentation about the architecture is on [SlideShare](https://www.slideshare.net/thierryschellenbach/scalable-news-feed-with-mongo-db)
 
 It uses [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) to reduce the need for locks.
 
